@@ -7,3 +7,6 @@
   Vector-only doc-level hit@5 = 36/36 (100%) - easy at doc level with 12 docs; chunk-level/answer eval is M6.
   FINDING: superseded leave policy ranks #1 for "annual leave" (0.72 vs handbook 0.67) -> must down-rank superseded in M3 and instruct LLM in M5.
   TODO: compare nomic-embed-text vs bge-m3 (brief asks), measure RAM.
+- 2026-11-14: M3 done. hybrid (BM25+vector, RRF, rerank pool 16) hit@5 = 36/36 (strict: all expected sources). ND-1042 -> error_codes #1; annual leave -> handbook #1 (superseded x0.5 penalty).
+  Cost on dev CPU: ~4.5s/query (rerank dominates), peak RSS ~3.7GB. Office PC likely 2-3x slower -> consider reranking fewer candidates (8-10) or a smaller reranker; benchmark on office PC.
+  Note: first Q34 miss was caused by too-small rerank pool (10); fixed with 16.

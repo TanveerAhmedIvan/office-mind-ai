@@ -10,7 +10,7 @@
 ## M2 Vector search (feat/m2-vector)
 - [x] Embedder (bge-m3, CPU, env-configurable), Qdrant local-mode index, top-5 query (app/vector.py), 3 tests
 ## M3 Hybrid + rerank (feat/m3-hybrid)
-- [ ] rank_bm25 w/ code-friendly tokenizer, RRF, reranker, ND-1042 test
+- [x] rank_bm25 w/ code-aware tokenizer, RRF, bge-reranker-v2-m3, superseded penalty (app/hybrid.py), 7 tests
 ## M4 Chat (feat/m4-chat)
 - [ ] Query rewrite, prompt builder, LLM client (Ollama), FastAPI SSE streaming, HTML UI, last-6-turns memory, conversation_tests
 ## M5 Guardrails (feat/m5-guardrails)
