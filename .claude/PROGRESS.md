@@ -17,3 +17,4 @@
   Lessons: (1) 3B LLM-as-judge was unreliable (false negatives) -> deterministic fact-matching grader; yes/no graded on core claim (grader is lenient on extra advice - note when comparing runs).
   (2) Q38-specific prompt hints caused leakage into Q15 and more refusals -> reverted; don't overfit prompts to single eval questions.
   (3) Rewording rule 3 (answer directly, 'No' is valid, refuse only if topic uncovered) cut over-refusal.
+- 2026-11-14: Pushed all 7 branches (main + feat/m1..m6) to origin via SSH (remote URL is HTTPS with no stored creds; pushed using explicit git@github.com URL, remote config unchanged).
