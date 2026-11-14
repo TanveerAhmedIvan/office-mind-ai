@@ -51,9 +51,11 @@ def hybrid_search(query: str, k: int = 5, rerank: bool = True, pool: int = 20,
                   client=None) -> list[dict]:
     vec = vector.search(query, pool, client)
     lex = bm25_search(query, pool)
+    for r in vec:
+        r["vscore"] = r["score"]  # keep raw cosine similarity; "score" is overwritten by rerank below
     by_id = {r["id"]: r for r in vec}
     for c, _ in lex:
-        by_id.setdefault(c.id, {**c.__dict__})
+        by_id.setdefault(c.id, {**c.__dict__, "vscore": 0.0})
     fused = rrf([[r["id"] for r in vec], [c.id for c, _ in lex]])
     cands = sorted(by_id.values(), key=lambda r: -fused[r["id"]])[: max(k * 3, 16)]
     for r in cands:

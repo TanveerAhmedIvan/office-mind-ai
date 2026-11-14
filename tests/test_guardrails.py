@@ -26,7 +26,14 @@ def test_system_prompt_request_refused_without_llm():
     assert "".join(toks) == REFUSE_LEAK and not llm.calls and meta["guard"] == "leak"
 
 
-def test_low_relevance_refused():
+def test_low_relevance_refused_when_enabled(monkeypatch):
+    monkeypatch.setattr("app.chat.MIN_RELEVANCE", 0.03)
     low = [{**CH[0], "score": 0.01}]
     meta, toks = guarded_answer([], "capital of Australia?", FakeLLM(), search=lambda q, k: low)
     assert "".join(toks) == REFUSE_UNKNOWN and meta["sources"] == []
+
+
+def test_low_relevance_guard_off_by_default():
+    low = [{**CH[0], "score": 0.01}]
+    meta, toks = guarded_answer([], "Uttara bus kokhon charhe?", FakeLLM("8:00 AM [x.md]"), search=lambda q, k: low)
+    assert "".join(toks).startswith("8:00") and meta.get("guard") is None

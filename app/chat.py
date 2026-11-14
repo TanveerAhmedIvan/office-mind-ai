@@ -1,7 +1,7 @@
 """M4: follow-up rewrite -> hybrid retrieval -> fenced prompt -> streamed cited answer."""
 from __future__ import annotations
 from typing import Iterator, Protocol
-import re
+import os, re
 from . import config
 from .hybrid import hybrid_search
 
@@ -65,7 +65,7 @@ LEAK = re.compile(r"(system|initial|hidden|secret) (prompt|message)|(your|the) (
 REFUSE_LEAK = "I can't share my internal instructions. I can answer questions about Nodi Tech's HR, IT, expense and NodiDesk documents."
 REFUSE_UNKNOWN = ("I don't know based on the company documents. I only answer questions about Nodi Tech; "
                   "for anything else please contact the relevant team (HR: hr@noditech.example).")
-MIN_RELEVANCE = 0.03  # eval gap: out-of-scope top score <=0.019, lowest in-scope 0.039 (fragile; LLM refusal is the backup)
+MIN_RELEVANCE = float(os.getenv("MIN_RELEVANCE", "0"))  # OFF by default: scores overlap (romanized Bangla in-scope 0.011 vs out-of-scope up to 0.019); the LLM refuses by itself
 
 
 def guarded_answer(history, question, llm, search=hybrid_search):
@@ -73,6 +73,6 @@ def guarded_answer(history, question, llm, search=hybrid_search):
     if LEAK.search(question):
         return {"standalone": question, "sources": [], "chunks": [], "guard": "leak"}, iter([REFUSE_LEAK])
     meta, toks = answer(history, question, llm, search)
-    if meta["chunks"] and max(c["score"] for c in meta["chunks"]) < MIN_RELEVANCE:
+    if MIN_RELEVANCE and meta["chunks"] and max(c["score"] for c in meta["chunks"]) < MIN_RELEVANCE:
         return {**meta, "sources": [], "guard": "irrelevant"}, iter([REFUSE_UNKNOWN])
     return meta, toks
