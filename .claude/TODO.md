@@ -13,7 +13,7 @@
 - [x] rank_bm25 w/ code-aware tokenizer, RRF, bge-reranker-v2-m3, superseded penalty (app/hybrid.py), 7 tests
 ## M4 Chat (feat/m4-chat)
 - [x] Code: rewrite, prompt builder, Ollama client, FastAPI SSE, HTML UI, 6-turn memory (fake-LLM tests pass)
-- [ ] BLOCKED: verify with real LLM (Ollama not installed) + run eval/conversation_tests.json; then merge M4
+- [x] Verified with real Ollama qwen2.5:3b: 9/9 conversation turns correct (eval/run_conversations.py). Some answers lack [file] citation -> M5
 ## M5 Guardrails (feat/m5-guardrails)
 - [ ] Out-of-scope refusal, injection fencing, no system-prompt leak, prefer current policy
 ## M6 Evaluation (feat/m6-eval)

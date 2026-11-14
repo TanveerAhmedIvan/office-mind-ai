@@ -11,3 +11,4 @@
   Cost on dev CPU: ~4.5s/query (rerank dominates), peak RSS ~3.7GB. Office PC likely 2-3x slower -> consider reranking fewer candidates (8-10) or a smaller reranker; benchmark on office PC.
   Note: first Q34 miss was caused by too-small rerank pool (10); fixed with 16.
 - 2026-11-14: M4 code on feat/m4-chat (app/llm.py, chat.py, server.py, static/index.html); 6 fake-LLM tests pass. NOT merged: no Ollama here (localhost + WSL host:11434 unreachable), so conversation_tests unverified.
+- 2026-11-14: Ollama + qwen2.5:3b installed by user. M4 verified: conv tests 9/9 correct; ~5s/answer on dev CPU (first call 48s model load). Merged M4. Gaps: missing citations on some answers; C1 t3 omitted 'no carry forward'.
