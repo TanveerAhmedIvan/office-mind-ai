@@ -8,7 +8,7 @@
 - [x] Heading-aware chunker, tables intact, superseded flag
 - [x] CLI (python -m app.ingest) + 5 passing pytest tests
 ## M2 Vector search (feat/m2-vector)
-- [ ] Embedder interface (bge-m3 default, fallback), Qdrant (local mode) index, top-5 query
+- [x] Embedder (bge-m3, CPU, env-configurable), Qdrant local-mode index, top-5 query (app/vector.py), 3 tests
 ## M3 Hybrid + rerank (feat/m3-hybrid)
 - [ ] rank_bm25 w/ code-friendly tokenizer, RRF, reranker, ND-1042 test
 ## M4 Chat (feat/m4-chat)
