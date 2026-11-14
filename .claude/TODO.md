@@ -27,3 +27,9 @@
 ## Open items
 - [ ] User to run PowerShell hardware query on office PC (storage, Windows version) -> update docs/hardware.md
 - [ ] Benchmark embed/rerank/LLM latency + RAM on CPU; choose LLM size (1.5B vs 3B) by eval score vs speed
+
+## Office PC deployment (tomorrow)
+- [x] docs/OFFICE_PC_SETUP.md, scripts/setup_wsl.sh, run_wsl.sh, setup_office_pc.ps1 (untested), eval/bench.py
+- [ ] Run setup on office PC (WSL available there), send hardware report + `eval.bench qwen2.5:3b 4` output
+- [ ] Decide model (3B vs 4B candidates) from CPU latency + Bangla accuracy; consider cutting rerank pool
+- [ ] LAN access (mirrored networking or portproxy) + add auth before sharing with staff
