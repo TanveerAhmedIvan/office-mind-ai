@@ -19,3 +19,7 @@
 - [ ] eval script: retrieval hit rate + LLM-judged correctness; report in `eval/reports/`
 ## Stretch
 - [ ] contextual retrieval, debug panel, metadata filter, feedback log, calculate_expense_approval tool
+
+## Open items
+- [ ] User to run PowerShell hardware query on office PC (storage, Windows version) -> update docs/hardware.md
+- [ ] Benchmark embed/rerank/LLM latency + RAM on CPU; choose LLM size (1.5B vs 3B) by eval score vs speed

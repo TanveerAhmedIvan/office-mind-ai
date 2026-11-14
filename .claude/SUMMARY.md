@@ -28,3 +28,7 @@ Retrieval top-5 hit >= 90%; answer correctness >= 85%; 3/3 out-of-scope + 3/3 gu
 
 ## DECISIONS
 (none yet)
+
+## HARDWARE CONSTRAINT (2026-11-14)
+Deployment target = office PC, CPU-only (Ryzen 5 3400G, ~14GB usable RAM, no CUDA). See docs/hardware.md.
+Dev on RTX 4060 PC but must stay CPU-viable. LLM: small quantized Qwen via Ollama. Using CPU torch.
