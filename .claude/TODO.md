@@ -1,11 +1,12 @@
 # TODO  (legend: [ ] todo, [~] in progress, [x] done)
 
 ## M0 Setup
-- [~] Import kit (data/, eval/, docs/), .gitignore, README, venv + requirements, project layout `app/`, `tests/`
+- [x] Import kit (data/, eval/, docs/), .gitignore, requirements.txt
+- [ ] Working venv with pip (BLOCKED: needs `sudo apt install python3-venv python3-pip` or approval to run get-pip.py)
 ## M1 Ingestion  (branch feat/m1-ingestion)
-- [ ] Parse 11 md files + PDF (tables) -> normalized text
-- [ ] Heading-aware chunker, keep tables intact, metadata (source, section, superseded flag)
-- [ ] CLI to print chunks; tests (all 12 files present, PDF table captured, Bangla preserved)
+- [~] Parse 11 md files (done) + PDF tables (code written, untested: needs pdfplumber)
+- [x] Heading-aware chunker, tables intact, superseded flag
+- [~] CLI (python -m app.ingest) + tests written; pytest not yet runnable
 ## M2 Vector search (feat/m2-vector)
 - [ ] Embedder interface (bge-m3 default, fallback), Qdrant (local mode) index, top-5 query
 ## M3 Hybrid + rerank (feat/m3-hybrid)
