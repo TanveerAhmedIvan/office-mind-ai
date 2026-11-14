@@ -10,3 +10,4 @@
 - 2026-11-14: M3 done. hybrid (BM25+vector, RRF, rerank pool 16) hit@5 = 36/36 (strict: all expected sources). ND-1042 -> error_codes #1; annual leave -> handbook #1 (superseded x0.5 penalty).
   Cost on dev CPU: ~4.5s/query (rerank dominates), peak RSS ~3.7GB. Office PC likely 2-3x slower -> consider reranking fewer candidates (8-10) or a smaller reranker; benchmark on office PC.
   Note: first Q34 miss was caused by too-small rerank pool (10); fixed with 16.
+- 2026-11-14: M4 code on feat/m4-chat (app/llm.py, chat.py, server.py, static/index.html); 6 fake-LLM tests pass. NOT merged: no Ollama here (localhost + WSL host:11434 unreachable), so conversation_tests unverified.

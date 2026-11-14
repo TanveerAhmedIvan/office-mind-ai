@@ -12,7 +12,8 @@
 ## M3 Hybrid + rerank (feat/m3-hybrid)
 - [x] rank_bm25 w/ code-aware tokenizer, RRF, bge-reranker-v2-m3, superseded penalty (app/hybrid.py), 7 tests
 ## M4 Chat (feat/m4-chat)
-- [ ] Query rewrite, prompt builder, LLM client (Ollama), FastAPI SSE streaming, HTML UI, last-6-turns memory, conversation_tests
+- [x] Code: rewrite, prompt builder, Ollama client, FastAPI SSE, HTML UI, 6-turn memory (fake-LLM tests pass)
+- [ ] BLOCKED: verify with real LLM (Ollama not installed) + run eval/conversation_tests.json; then merge M4
 ## M5 Guardrails (feat/m5-guardrails)
 - [ ] Out-of-scope refusal, injection fencing, no system-prompt leak, prefer current policy
 ## M6 Evaluation (feat/m6-eval)
