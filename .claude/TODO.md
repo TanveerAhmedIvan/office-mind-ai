@@ -1,11 +1,12 @@
 # TODO  (legend: [ ] todo, [~] in progress, [x] done)
 
 ## M0 Setup
-- [~] Import kit (data/, eval/, docs/), .gitignore, README, venv + requirements, project layout `app/`, `tests/`
+- [x] Import kit (data/, eval/, docs/), .gitignore, requirements.txt
+- [x] Working venv (.venv) with pdfplumber, pypdf, pytest
 ## M1 Ingestion  (branch feat/m1-ingestion)
-- [ ] Parse 11 md files + PDF (tables) -> normalized text
-- [ ] Heading-aware chunker, keep tables intact, metadata (source, section, superseded flag)
-- [ ] CLI to print chunks; tests (all 12 files present, PDF table captured, Bangla preserved)
+- [x] Parse 11 md files + PDF (tables as own markdown chunk, table text removed from prose)
+- [x] Heading-aware chunker, tables intact, superseded flag
+- [x] CLI (python -m app.ingest) + 5 passing pytest tests
 ## M2 Vector search (feat/m2-vector)
 - [ ] Embedder interface (bge-m3 default, fallback), Qdrant (local mode) index, top-5 query
 ## M3 Hybrid + rerank (feat/m3-hybrid)

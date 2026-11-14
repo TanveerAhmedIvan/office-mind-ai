@@ -1,0 +1,11 @@
+pdfplumber
+pypdf
+rank_bm25
+qdrant-client
+sentence-transformers
+FlagEmbedding
+fastapi
+uvicorn
+httpx
+python-dotenv
+pytest
