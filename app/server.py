@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from . import config
-from .chat import answer, trim
+from .chat import guarded_answer as answer, trim
 from .llm import OllamaLLM
 
 app = FastAPI(title="OfficeMind AI")
