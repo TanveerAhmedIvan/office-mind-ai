@@ -2,11 +2,11 @@
 
 ## M0 Setup
 - [x] Import kit (data/, eval/, docs/), .gitignore, requirements.txt
-- [ ] Working venv with pip (BLOCKED: needs `sudo apt install python3-venv python3-pip` or approval to run get-pip.py)
+- [x] Working venv (.venv) with pdfplumber, pypdf, pytest
 ## M1 Ingestion  (branch feat/m1-ingestion)
-- [~] Parse 11 md files (done) + PDF tables (code written, untested: needs pdfplumber)
+- [x] Parse 11 md files + PDF (tables as own markdown chunk, table text removed from prose)
 - [x] Heading-aware chunker, tables intact, superseded flag
-- [~] CLI (python -m app.ingest) + tests written; pytest not yet runnable
+- [x] CLI (python -m app.ingest) + 5 passing pytest tests
 ## M2 Vector search (feat/m2-vector)
 - [ ] Embedder interface (bge-m3 default, fallback), Qdrant (local mode) index, top-5 query
 ## M3 Hybrid + rerank (feat/m3-hybrid)

@@ -71,8 +71,13 @@ def chunk_pdf(path: Path) -> list[Chunk]:
     chunks: list[Chunk] = []
     with pdfplumber.open(path) as pdf:
         for i, page in enumerate(pdf.pages, 1):
-            tables = [_table_to_md(t) for t in page.extract_tables()]
-            text = page.extract_text() or ""
+            found = page.find_tables()
+            tables = [_table_to_md(t.extract()) for t in found]
+            # drop table regions from prose so the garbled copy isn't indexed twice
+            prose = page
+            for t in found:
+                prose = prose.outside_bbox(t.bbox)
+            text = prose.extract_text() or ""
             sec = f"{path.stem} p.{i}"
             if text.strip():
                 chunks.append(_mk(path, sec, text.strip(), len(chunks), False))
