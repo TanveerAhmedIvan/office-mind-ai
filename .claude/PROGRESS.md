@@ -18,3 +18,5 @@
   (2) Q38-specific prompt hints caused leakage into Q15 and more refusals -> reverted; don't overfit prompts to single eval questions.
   (3) Rewording rule 3 (answer directly, 'No' is valid, refuse only if topic uncovered) cut over-refusal.
 - 2026-11-14: Pushed all 7 branches (main + feat/m1..m6) to origin via SSH (remote URL is HTTPS with no stored creds; pushed using explicit git@github.com URL, remote config unchanged).
+- 2026-11-14: BUG (user-reported): romanized Bangla "Uttara bus kokhon charhe?" refused. Cause: relevance guard (rerank<0.03) - reranker gave right chunk 0.011. Vector sim doesn't separate either (OOS Q37=0.62). Fix: MIN_RELEVANCE default 0 (env override); LLM refuses OOS itself (Q35-37 verified).
+  OPEN: qwen2.5:3b weak at Bangla generation: 'উত্তরা থেকে বাস কখন ছাড়ে?' answers 6:15 PM (wrong), 'মিরপুর ১০ থেকে ... কয়টায়' -> I don't know. Next: try qwen2.5:7b on dev PC (LLM_MODEL env) / Bangla-aware prompt. Re-run eval after.

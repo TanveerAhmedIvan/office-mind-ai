@@ -16,6 +16,7 @@
 - [x] Verified with real Ollama qwen2.5:3b: 9/9 conversation turns correct (eval/run_conversations.py). Some answers lack [file] citation -> M5
 ## M5 Guardrails (feat/m5-guardrails)
 - [x] Injection lines stripped at ingest (sanitize), leak guard (canned refusal, no LLM call), low-relevance guard (0.03), fenced context, prompt rules; 5 tests
+- [x] Relevance guard now OFF by default (broke romanized Bangla); see PROGRESS
 - [ ] OPEN: Q38 'Is Enterprise plan free?' answers 'I don't know' (expected No/custom quote). 3B model confused by FAQ 'free trial'. Try contextual retrieval / bigger model; see M6 score
 ## M6 Evaluation (feat/m6-eval)
 - [x] eval/run_eval.py: hit@5 + fact-matching grader (yes/no core-claim, refusal check, hard rules for Q38/Q40/18-vs-15); JSON reports in eval/reports/
