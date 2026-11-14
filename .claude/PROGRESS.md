@@ -12,3 +12,4 @@
   Note: first Q34 miss was caused by too-small rerank pool (10); fixed with 16.
 - 2026-11-14: M4 code on feat/m4-chat (app/llm.py, chat.py, server.py, static/index.html); 6 fake-LLM tests pass. NOT merged: no Ollama here (localhost + WSL host:11434 unreachable), so conversation_tests unverified.
 - 2026-11-14: Ollama + qwen2.5:3b installed by user. M4 verified: conv tests 9/9 correct; ~5s/answer on dev CPU (first call 48s model load). Merged M4. Gaps: missing citations on some answers; C1 t3 omitted 'no carry forward'.
+- 2026-11-14: M5: guardrails 5/6 on Q35-40 (Q38 open). Injection no longer reaches LLM; before fix Q38 said 'free' and Q40 leaked 'Enterprise is free'. Relevance threshold 0.03 is fragile (gap 0.019..0.039).

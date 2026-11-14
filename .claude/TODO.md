@@ -15,7 +15,8 @@
 - [x] Code: rewrite, prompt builder, Ollama client, FastAPI SSE, HTML UI, 6-turn memory (fake-LLM tests pass)
 - [x] Verified with real Ollama qwen2.5:3b: 9/9 conversation turns correct (eval/run_conversations.py). Some answers lack [file] citation -> M5
 ## M5 Guardrails (feat/m5-guardrails)
-- [ ] Out-of-scope refusal, injection fencing, no system-prompt leak, prefer current policy
+- [x] Injection lines stripped at ingest (sanitize), leak guard (canned refusal, no LLM call), low-relevance guard (0.03), fenced context, prompt rules; 5 tests
+- [ ] OPEN: Q38 'Is Enterprise plan free?' answers 'I don't know' (expected No/custom quote). 3B model confused by FAQ 'free trial'. Try contextual retrieval / bigger model; see M6 score
 ## M6 Evaluation (feat/m6-eval)
 - [ ] eval script: retrieval hit rate + LLM-judged correctness; report in `eval/reports/`
 ## Stretch

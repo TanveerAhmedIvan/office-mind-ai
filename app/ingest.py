@@ -16,6 +16,19 @@ class Chunk:
     text: str
     superseded: bool = False
     lang: str = "en"
+    flagged: bool = False  # an injection-like line was stripped from this chunk
+
+
+INJECTION = re.compile(
+    r"ignore (all )?(previous|prior|above) instructions|system note to ai|"
+    r"(print|reveal|show|output) (your |the )?(full )?system prompt|disregard .{0,30}instructions", re.I)
+
+
+def sanitize(text: str) -> tuple[str, bool]:
+    """Drop lines that try to instruct the AI (prompt injection). Returns (clean_text, was_flagged)."""
+    lines = text.splitlines()
+    kept = [l for l in lines if not INJECTION.search(l)]
+    return "\n".join(kept), len(kept) != len(lines)
 
 
 def _lang(text: str) -> str:
@@ -53,7 +66,8 @@ def chunk_markdown(path: Path) -> list[Chunk]:
 
 
 def _mk(path: Path, sec: str, text: str, n: int, superseded: bool) -> Chunk:
-    return Chunk(f"{path.name}#{n}", path.name, sec, f"[{sec}]\n{text}", superseded, _lang(text))
+    text, flagged = sanitize(text)
+    return Chunk(f"{path.name}#{n}", path.name, sec, f"[{sec}]\n{text}", superseded, _lang(text), flagged)
 
 
 def _table_to_md(table: list[list[str | None]]) -> str:
