@@ -13,3 +13,7 @@
 - 2026-11-14: M4 code on feat/m4-chat (app/llm.py, chat.py, server.py, static/index.html); 6 fake-LLM tests pass. NOT merged: no Ollama here (localhost + WSL host:11434 unreachable), so conversation_tests unverified.
 - 2026-11-14: Ollama + qwen2.5:3b installed by user. M4 verified: conv tests 9/9 correct; ~5s/answer on dev CPU (first call 48s model load). Merged M4. Gaps: missing citations on some answers; C1 t3 omitted 'no carry forward'.
 - 2026-11-14: M5: guardrails 5/6 on Q35-40 (Q38 open). Injection no longer reaches LLM; before fix Q38 said 'free' and Q40 leaked 'Enterprise is free'. Relevance threshold 0.03 is fragile (gap 0.019..0.039).
+- 2026-11-14: M6 eval (qwen2.5:3b, dev CPU, ~190s for 40 q): hit@5 35/36=97% (target 90 OK); correctness 35/40=88% (target 85 OK); guardrails 5/6 (target 6/6 MISSED: Q38); annual leave=18 OK.
+  Lessons: (1) 3B LLM-as-judge was unreliable (false negatives) -> deterministic fact-matching grader; yes/no graded on core claim (grader is lenient on extra advice - note when comparing runs).
+  (2) Q38-specific prompt hints caused leakage into Q15 and more refusals -> reverted; don't overfit prompts to single eval questions.
+  (3) Rewording rule 3 (answer directly, 'No' is valid, refuse only if topic uncovered) cut over-refusal.
