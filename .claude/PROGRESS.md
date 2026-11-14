@@ -20,3 +20,5 @@
 - 2026-11-14: Pushed all 7 branches (main + feat/m1..m6) to origin via SSH (remote URL is HTTPS with no stored creds; pushed using explicit git@github.com URL, remote config unchanged).
 - 2026-11-14: BUG (user-reported): romanized Bangla "Uttara bus kokhon charhe?" refused. Cause: relevance guard (rerank<0.03) - reranker gave right chunk 0.011. Vector sim doesn't separate either (OOS Q37=0.62). Fix: MIN_RELEVANCE default 0 (env override); LLM refuses OOS itself (Q35-37 verified).
   OPEN: qwen2.5:3b weak at Bangla generation: 'উত্তরা থেকে বাস কখন ছাড়ে?' answers 6:15 PM (wrong), 'মিরপুর ১০ থেকে ... কয়টায়' -> I don't know. Next: try qwen2.5:7b on dev PC (LLM_MODEL env) / Bangla-aware prompt. Re-run eval after.
+- 2026-11-14: CORRECTION: Ollama on dev PC used the RTX 4060 (100% GPU), so all earlier ~5s/answer + 190s eval timings were GPU numbers. CPU-only (num_gpu=0, 4 threads): retrieval ~4s + LLM ~7s = ~11s e2e on 9700X; office 3400G est ~15-25s. eval/bench.py now forces CPU.
+  Office PC has WSL -> setup via scripts/setup_wsl.sh; WSL default RAM cap 50% -> .wslconfig memory=11GB needed.

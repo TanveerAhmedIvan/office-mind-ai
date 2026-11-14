@@ -1,11 +1,13 @@
+# Install CPU-only torch FIRST (see docs/OFFICE_PC_SETUP.md):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
 pdfplumber
 pypdf
 rank_bm25
 qdrant-client
 sentence-transformers
-FlagEmbedding
 fastapi
 uvicorn
 httpx
 python-dotenv
 pytest
+psutil
