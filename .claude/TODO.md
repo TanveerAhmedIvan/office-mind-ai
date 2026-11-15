@@ -51,7 +51,10 @@
 - [x] .wslconfig applied (10GB / 4 threads). Port 8000 is taken by php8.3 (MOCA app) -> OfficeMind uses 8001 (run_wsl.sh default); portproxy/firewall for 8001 added by user in PowerShell
 - [x] Smoke test on 8010: annual leave answer = 18 days, cites employee_handbook_v3.md; first request took 2m16s (cold model load)
 - [x] Cold start fix: model preloaded in a background thread at server start (keep_alive 1h)
-- [ ] Measure warm latency per answer on this PC (needs server running)
+- [x] SERVER RUNNING 2026-11-15: http://192.168.68.111:8001 (LAN) and http://localhost:8001, started with `setsid nohup uvicorn ... --host 0.0.0.0 --port 8001` (dies on `wsl --shutdown`/reboot -> `bash scripts/run_wsl.sh`). Windows portproxy 8001 -> WSL IP 172.31.154.34 + firewall rule 'OfficeMind AI 8001' present. WSL IP changes after reboot -> re-run the portproxy command.
+- [x] Live checks via LAN IP: login OK; annual leave -> 18 days [employee_handbook_v3.md]; 'claimed BDT 30,000' -> Department head + CFO (tool used)
+- [ ] LATENCY TOO HIGH (measured warm, 3400G, 4 threads): ~110-155 s per answer vs 15-25 s target. Breakdown: vector ~1 s, BM25 ~0 s, RERANK 38-45 s (16 candidates), LLM first token 52-63 s, generation ~5-10 s. Fix options (T8): rerank pool 16 -> 6-8, smaller/no reranker, 3 chunks, 1.5B model, check Ollama threads; then re-run eval
+- [ ] Rerun eval (`python -m eval.run_eval --no-judge`, ~40 q x ~2 min = ~80 min at current speed) AFTER latency fix
 - [ ] Run jobs ONE AT A TIME (server smoke test, then eval); eval was killed at 6/40 (Q05 medical certificate wrong so far)
 - [ ] Record `eval.bench qwen2.5:3b 4` output and CPU latency per answer
 - [ ] Decide model (3B vs 4B candidates) from CPU latency + Bangla accuracy; consider cutting rerank pool
