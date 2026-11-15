@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OfficeMind AI Architecture</title>
+<style>
+:root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f4f6fa;--line:#d5dbe6;--a:#2557d6;--b:#0f8a5f;--c:#b45309;--d:#7c3aed;--r:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--line:#2e3650;--a:#7aa2ff;--b:#4cd3a0;--c:#f0b25a;--d:#b69cff;--r:#ff8a7a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:24px}h2{font-size:19px;margin-top:36px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.sub{color:var(--mut)}
+.flow{display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:34px 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.n{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;background:var(--a)}
+.arrow{text-align:center;color:var(--mut);line-height:1.2;font-size:18px}
+.step h3{margin:0 0 4px;font-size:16px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:2px 10px;font-size:13.5px;margin-top:6px}
+.kv b{color:var(--mut);font-weight:600}
+code{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:12.5px}
+.idx .n{background:var(--b)}.ses .n{background:var(--d)}.grd .n{background:var(--r)}
+.tag{display:inline-block;font-size:11px;border-radius:99px;padding:1px 8px;margin-left:6px;color:#fff;background:var(--c);vertical-align:middle}
+table{border-collapse:collapse;width:100%;font-size:13.5px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{background:var(--card)}
+.ok{color:var(--b);font-weight:600}.no{color:var(--r);font-weight:600}.part{color:var(--c);font-weight:600}
+svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{fill:var(--card);stroke:var(--line)}svg .ln{stroke:var(--mut);fill:none;stroke-width:1.4}
+@media(max-width:560px){.kv{grid-template-columns:1fr}.kv b{margin-top:4px}}
+</style></head><body><main>
+<h1>OfficeMind AI: how it works</h1>
+<p class="sub">RAG chatbot for Nodi Tech Ltd. Answers only from <code>data/</code>, cites sources, refuses otherwise. Stack: bge-m3 embeddings, local Qdrant, BM25, bge-reranker-v2-m3, Qwen2.5-3B via Ollama, FastAPI + SSE, plain HTML UI. CPU only on the office PC.</p>
+
+<h2>0. System map</h2>
+<svg viewBox="0 0 960 330" role="img" aria-label="System map: browser to FastAPI to retrieval and Ollama">
+<rect class="box" x="10" y="130" width="130" height="70" rx="8"/><text x="75" y="160" text-anchor="middle">Browser</text><text x="75" y="178" text-anchor="middle">static/index.html</text>
+<rect class="box" x="200" y="110" width="170" height="110" rx="8"/><text x="285" y="138" text-anchor="middle">FastAPI</text><text x="285" y="156" text-anchor="middle">app/server.py</text><text x="285" y="176" text-anchor="middle">SESSIONS (RAM dict)</text><text x="285" y="194" text-anchor="middle">POST /chat (SSE)</text>
+<rect class="box" x="430" y="110" width="170" height="110" rx="8"/><text x="515" y="138" text-anchor="middle">Chat pipeline</text><text x="515" y="156" text-anchor="middle">app/chat.py</text><text x="515" y="176" text-anchor="middle">rewrite, guard, prompt</text>
+<rect class="box" x="660" y="10" width="290" height="130" rx="8"/><text x="805" y="34" text-anchor="middle">Retrieval: app/hybrid.py</text><text x="805" y="56" text-anchor="middle">BM25 (RAM, built from data/)</text><text x="805" y="76" text-anchor="middle">Vector: app/vector.py + qdrant_data/</text><text x="805" y="96" text-anchor="middle">RRF fuse, then reranker (RAM model)</text><text x="805" y="116" text-anchor="middle">superseded penalty x0.5</text>
+<rect class="box" x="660" y="190" width="290" height="70" rx="8"/><text x="805" y="218" text-anchor="middle">Ollama: app/llm.py</text><text x="805" y="238" text-anchor="middle">localhost:11434, qwen2.5:3b</text>
+<rect class="box" x="430" y="270" width="170" height="50" rx="8"/><text x="515" y="300" text-anchor="middle">data/*.md, *.pdf</text>
+<path class="ln" d="M140 165H200M370 165H430M600 140L660 90M600 190L660 220M515 220V270"/>
+</svg>
+
+<h2>1. Indexing (run once, or after data/ changes)</h2>
+<div class="flow idx">
+<div class="step"><div class="n">1</div><div><h3>Parse and chunk</h3>
+<div class="kv"><b>File</b><span><code>app/ingest.py</code> <code>ingest_all()</code>, <code>chunk_markdown()</code>, <code>chunk_pdf()</code></span>
+<b>Reads</b><span>every <code>.md</code> and <code>.pdf</code> in <code>data/</code> (12 files)</span>
+<b>Does</b><span>Splits by heading (max 1200 chars). Keeps tables whole. PDF tables become markdown and are excluded from prose. Drops injection lines (<code>sanitize()</code>), detects Bangla vs English, flags files marked SUPERSEDED.</span>
+<b>Output</b><span><code>Chunk(id, source, section, text, superseded, lang, flagged)</code> in memory</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">2</div><div><h3>Embed and store vectors</h3>
+<div class="kv"><b>File</b><span><code>app/vector.py</code> <code>build_index()</code>. Command: <code>python -m app.vector build</code></span>
+<b>Reads</b><span>chunks from step 1; model <code>BAAI/bge-m3</code> (HuggingFace cache)</span>
+<b>Writes</b><span><code>qdrant_data/</code> (collection <code>nodi_docs</code>, cosine, chunk fields as payload)</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">3</div><div><h3>BM25 index</h3>
+<div class="kv"><b>File</b><span><code>app/hybrid.py</code> <code>_bm25()</code></span>
+<b>Reads</b><span>chunks re-parsed from <code>data/</code> at first query</span>
+<b>Writes</b><span>RAM only (lost on restart, rebuilt in about a second). Codes like <code>ND-1042</code> are kept whole.</span></div></div></div>
+</div>
+
+<h2>2. One chat message, step by step</h2>
+<div class="flow">
+<div class="step ses"><div class="n">1</div><div><h3>Receive message and load session</h3>
+<div class="kv"><b>File</b><span><code>app/server.py</code> <code>chat()</code></span>
+<b>Reads</b><span>JSON <code>{message, session_id}</code> from the browser. History from <code>SESSIONS[session_id]</code>; new uuid if none.</span>
+<b>Session</b><span>Python dict in server RAM. Last 6 turns (12 messages) kept via <code>trim()</code>. The browser holds only the id in a JS variable.</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step grd"><div class="n">2</div><div><h3>Input guard</h3>
+<div class="kv"><b>File</b><span><code>app/chat.py</code> <code>guarded_answer()</code></span>
+<b>Does</b><span>Regex <code>LEAK</code> catches "system prompt", "ignore previous instructions", etc. and returns a fixed refusal with no LLM call.</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">3</div><div><h3>Rewrite follow-up <span class="tag">LLM call 1</span></h3>
+<div class="kv"><b>File</b><span><code>app/chat.py</code> <code>rewrite()</code></span>
+<b>Reads</b><span>session history plus the new message</span>
+<b>Does</b><span>Skipped when history is empty. Otherwise asks Qwen (temp 0) for a standalone question, e.g. "and for sick leave?" becomes "How many sick leave days per year?"</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">4</div><div><h3>Vector search (top 20)</h3>
+<div class="kv"><b>File</b><span><code>app/vector.py</code> <code>search()</code></span>
+<b>Reads</b><span><code>qdrant_data/</code>; embeds the query with bge-m3</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">5</div><div><h3>BM25 search (top 20)</h3>
+<div class="kv"><b>File</b><span><code>app/hybrid.py</code> <code>bm25_search()</code></span>
+<b>Reads</b><span>in-RAM BM25 index (exact words and codes)</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">6</div><div><h3>Fuse and rerank</h3>
+<div class="kv"><b>File</b><span><code>app/hybrid.py</code> <code>rrf()</code>, <code>hybrid_search()</code></span>
+<b>Does</b><span>Reciprocal rank fusion (k=60), keeps 16 candidates, cross-encoder <code>bge-reranker-v2-m3</code> rescoring, score x0.5 for superseded chunks, returns top 5.</span>
+<b>Cost</b><span>about 4 s on the dev CPU; the largest retrieval cost</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">7</div><div><h3>Build fenced prompt</h3>
+<div class="kv"><b>File</b><span><code>app/chat.py</code> <code>build_messages()</code>, <code>SYSTEM_PROMPT</code></span>
+<b>Does</b><span>System rules, then trimmed history, then the user turn with the 5 chunks inside <code>&lt;context&gt;&lt;doc source=… superseded=…&gt;</code>. Context is declared untrusted data.</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step"><div class="n">8</div><div><h3>Generate and stream <span class="tag">LLM call 2</span></h3>
+<div class="kv"><b>File</b><span><code>app/llm.py</code> <code>OllamaLLM.chat()</code>, then <code>app/server.py</code> <code>sse()</code></span>
+<b>Reads</b><span>Ollama at <code>localhost:11434</code>, model <code>qwen2.5:3b</code></span>
+<b>Sends</b><span>SSE events <code>meta</code> (sources, chunk ids and scores, standalone question), many <code>token</code>, then <code>done</code>.</span></div></div></div>
+<div class="arrow">↓</div>
+<div class="step ses"><div class="n">9</div><div><h3>Save turn</h3>
+<div class="kv"><b>File</b><span><code>app/server.py</code> <code>gen()</code></span>
+<b>Writes</b><span>Appends user and assistant messages to <code>SESSIONS[sid]</code>, then trims to 6 turns. Nothing is written to disk.</span></div></div></div>
+</div>
+
+<h2>3. Which file feeds which answer</h2>
+<table><tr><th>Topic</th><th>Source file in <code>data/</code></th></tr>
+<tr><td>Hours, leave, probation, remote work, notice</td><td>employee_handbook_v3.md (old leave_policy_v2.1 is SUPERSEDED, penalised)</td></tr>
+<tr><td>Passwords, MFA, devices, VPN, incidents</td><td>it_security_policy.md</td></tr>
+<tr><td>Expenses, allowances</td><td>expense_reimbursement_policy.pdf</td></tr>
+<tr><td>NodiDesk plans, billing</td><td>nodidesk_pricing.md, nodidesk_faq.md</td></tr>
+<tr><td>NodiDesk how-to, SLA</td><td>nodidesk_user_guide.md</td></tr>
+<tr><td>NodiDesk versions, deprecations</td><td>nodidesk_release_notes.md</td></tr>
+<tr><td>API, error codes (ND-xxxx)</td><td>nodidesk_api_reference.md, nodidesk_error_codes.md</td></tr>
+<tr><td>Transport, canteen (Bangla)</td><td>office_transport_canteen_bn.md</td></tr>
+<tr><td>Printer notice (contains injection, stripped)</td><td>vendor_notice_printer.md</td></tr></table>
+
+<h2>4. Implementation status</h2>
+<table><tr><th>Area</th><th>Status</th><th>Note</th></tr>
+<tr><td>Ingestion, vector, hybrid, rerank, chat, guardrails, eval</td><td class="ok">Done</td><td>M1 to M6 merged</td></tr>
+<tr><td>Chat sessions</td><td class="part">Partial</td><td>RAM only; lost on restart; never expires</td></tr>
+<tr><td>Relevance guard</td><td class="part">Off</td><td>Scores overlap for romanized Bangla; the LLM refuses by itself</td></tr>
+<tr><td>Login and permissions</td><td class="no">Missing</td><td>LAN only, no auth</td></tr>
+<tr><td>Chat history storage, feedback log</td><td class="no">Missing</td><td>See <code>docs/TODO.md</code></td></tr>
+<tr><td>Debug panel, metadata filter, expense tool</td><td class="no">Missing</td><td>Stretch goals</td></tr></table>
+
+<h2>5. Extra data needed from you</h2>
+<table><tr><th>Needed</th><th>Why</th></tr>
+<tr><td>List of users, with name, department, role</td><td>Login, per-user history, department filter</td></tr>
+<tr><td>Which departments may read which documents</td><td>Permission filter on retrieval (for example expenses only for staff)</td></tr>
+<tr><td>Office PC disk, Windows version (PowerShell query in docs)</td><td>Capacity and setup path</td></tr>
+<tr><td>Expense approval thresholds table</td><td>Needed for the <code>calculate_expense_approval</code> tool; check the PDF has them</td></tr>
+<tr><td>Real company documents (beyond the 12 sample files)</td><td>The sample set is fictional</td></tr>
+<tr><td>Session retention rule (how many days to keep chats)</td><td>Privacy and storage</td></tr></table>
+</main></body></html>
