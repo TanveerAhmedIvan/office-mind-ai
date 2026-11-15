@@ -5,3 +5,4 @@ __pycache__/
 qdrant_data/
 .pytest_cache/
 eval/reports/
+chat_data/

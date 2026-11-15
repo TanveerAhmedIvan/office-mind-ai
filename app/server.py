@@ -6,11 +6,13 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from . import config
-from .chat import guarded_answer as answer, trim
+from .chat import guarded_answer as answer
 from .llm import OllamaLLM
+from .sessions import SessionStore
 
 app = FastAPI(title="OfficeMind AI")
-SESSIONS: dict[str, list[dict]] = {}
+store = SessionStore()
+store.purge_expired()
 llm = OllamaLLM()
 
 
@@ -26,7 +28,7 @@ def sse(event: str, data) -> str:
 @app.post("/chat")
 def chat(req: Req):
     sid = req.session_id or uuid.uuid4().hex
-    history = SESSIONS.setdefault(sid, [])
+    history = store.history(sid)
 
     def gen():
         meta, tokens = answer(history, req.message, llm)
@@ -35,9 +37,7 @@ def chat(req: Req):
         for t in tokens:
             parts.append(t)
             yield sse("token", t)
-        history.extend([{"role": "user", "content": req.message},
-                        {"role": "assistant", "content": "".join(parts)}])
-        SESSIONS[sid] = trim(history)
+        store.append_turn(sid, req.message, "".join(parts))
         yield sse("done", {})
     return StreamingResponse(gen(), media_type="text/event-stream")
 
