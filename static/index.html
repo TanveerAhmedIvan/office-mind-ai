@@ -7,7 +7,8 @@
 @media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--user:#233463;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a;--ok:#4cd3a0;--warn:#f0b25a;
  --c1:#b69cff;--c2:#7aa2ff;--c3:#4cd3a0;--c4:#f0b25a;--c5:#ff8a7a;--c6:#94a3b8}}
 *{box-sizing:border-box}
-body{margin:0 auto;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:860px;padding:0 16px}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;height:100vh;height:100dvh;display:flex}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;max-width:860px;margin:0 auto;padding:0 16px}
 header{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 header h1{font-size:18px;margin:0;flex:1}
 header button{background:none;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
@@ -26,6 +27,23 @@ form button,.login button{padding:10px 18px;border:0;border-radius:10px;backgrou
 form button:disabled{opacity:.5;cursor:wait}
 .login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
 .login form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;padding:0}.login h2{margin:0 0 4px}#lerr{color:var(--err);font-size:14px;min-height:20px}
+/* ---- sidebar ---- */
+.side{width:272px;flex:none;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:12px;gap:10px}
+.side #new{width:100%;padding:10px;border:1px solid var(--acc);background:none;color:var(--acc);border-radius:10px;font-size:15px;cursor:pointer;font-weight:600}
+.side #new:hover{background:var(--acc);color:#fff}
+.lim{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.lim b{font-size:14px}.lim .bar{height:6px;border-radius:3px;background:var(--line);margin:6px 0 4px;overflow:hidden}.lim .bar i{display:block;height:100%;background:var(--ok)}
+.lim.warn .bar i{background:var(--warn)}.lim.full .bar i{background:var(--err)}.lim.full b{color:var(--err)}.lim small{color:var(--mut)}
+.side h3{margin:4px 0 0;font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+#sl{flex:1;overflow:auto;display:flex;flex-direction:column;gap:2px;margin:0 -4px;padding:0 4px}
+.si{display:flex;align-items:center;gap:4px;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:14px;border:1px solid transparent}
+.si:hover{background:var(--bg)}.si.on{background:var(--bg);border-color:var(--acc)}
+.si div{flex:1;min-width:0}.si .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.si .d{font-size:11.5px;color:var(--mut)}
+.si button{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px;visibility:hidden;padding:0 4px}.si:hover button{visibility:visible}.si button:hover{color:var(--err)}
+.none{color:var(--mut);font-size:13px;padding:6px 8px}
+#menu{display:none}
+@media(max-width:760px){.side{position:fixed;inset:0 auto 0 0;z-index:4;transform:translateX(-100%);transition:transform .2s;width:80%;max-width:300px}
+ body.nav .side{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.4)}#menu{display:inline-block}}
 /* ---- trace view ---- */
 details.trace{margin-top:8px;white-space:normal;font-size:13px}
 details.trace>summary{cursor:pointer;color:var(--acc);font-weight:600}
@@ -45,9 +63,13 @@ table.h td:last-child,table.h th:last-child{text-align:right;font-variant-numeri
 .sn{color:var(--mut);font-size:12px;white-space:pre-wrap;margin:2px 0 4px 0}
 </style></head><body>
 <div class="login" id="login"><form id="lf"><h2>OfficeMind AI</h2><input id="le" type="email" placeholder="Email" autocomplete="username" required><input id="lp" type="password" placeholder="Password" autocomplete="current-password" required><button>Sign in</button><div id="lerr"></div></form></div>
-<header><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button><button id="new">New chat</button></header>
+<aside class="side" id="side"><button id="new">+ New chat</button>
+<div class="lim" id="lim"></div><h3>Previous chats</h3><div id="sl"></div></aside>
+<div class="main">
+<header><button id="menu" aria-label="Chats">☰</button><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button></header>
 <div id="log" aria-live="polite"></div>
 <form id="f"><input id="q" placeholder="Ask about HR, IT, expenses, NodiDesk…" autocomplete="off" autofocus><button id="send">Send</button></form>
+</div>
 <script>
 const log=document.getElementById('log'),q=document.getElementById('q'),send=document.getElementById('send');
 const SUGGEST=['What are the office hours?','How many annual leave days do I get?','What is the NodiDesk Growth plan price?','Can I work from home?'];
@@ -98,12 +120,30 @@ function lazyTraceBox(id,answer){const d=document.createElement('details');d.cla
   try{const r=await fetch('/traces/'+id);b.innerHTML=r.ok?renderTrace(await r.json(),answer):'Trace not available.'}catch(e){b.textContent='Trace not available.'}};return d}
 
 /* ---------- session, login ---------- */
-function showMe(){document.getElementById('who').textContent=me?me.email+' · '+(me.limit?me.used_today+'/'+me.limit+' today':me.used_today+' today'):'';
+function showMe(){document.getElementById('who').textContent=me?me.email:'';
+ const L=document.getElementById('lim');
+ if(me){const u=me.used_today,l=me.limit,pct=l?Math.min(100,100*u/l):0;L.className='lim'+(l&&u>=l?' full':(l&&pct>=80?' warn':''));
+  L.innerHTML=l?`<b>${u} of ${l}</b> messages used today<div class="bar"><i style="width:${pct}%"></i></div><small>${u>=l?'Limit reached. Resets at midnight.':(l-u)+' left today · resets at midnight'}</small>`
+   :`<b>${u}</b> messages today<div class="bar"><i style="width:0"></i></div><small>No daily limit</small>`}
+
  document.getElementById('adm').style.display=me&&me.role==='admin'?'inline':'none'}
+function ago(ts){const m=Math.round((Date.now()/1000-ts)/60);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<24)return h+' h ago';
+ const d=Math.round(h/24);return d===1?'yesterday':d+' days ago'}
+async function loadSessions(){
+ const box=document.getElementById('sl');
+ try{const r=await fetch('/sessions');if(!r.ok)throw 0;const L=await r.json();
+  box.innerHTML=L.length?'':'<div class="none">No previous chats yet.</div>';
+  L.forEach(x=>{const d=document.createElement('div');d.className='si'+(x.sid===sid?' on':'');d.title=x.title;
+   d.innerHTML=`<div><div class="t">${esc(x.title)}</div><div class="d">${ago(x.updated)} · ${x.messages/2|0} Q</div></div><button title="Delete chat" aria-label="Delete chat">×</button>`;
+   d.onclick=()=>{if(x.sid===sid)return;sid=x.sid;saveSid();document.body.classList.remove('nav');restore();loadSessions()};
+   d.querySelector('button').onclick=async e=>{e.stopPropagation();if(!confirm('Delete this chat?'))return;
+    await fetch('/sessions/'+x.sid,{method:'DELETE'});if(x.sid===sid){sid=null;saveSid();empty()}loadSessions()};
+   box.append(d)})}catch(e){box.innerHTML=''}}
+document.getElementById('menu').onclick=()=>document.body.classList.toggle('nav');
 async function boot(){
  const r=await fetch('/me');
- if(r.status===401){me=null;document.getElementById('login').style.display='flex';document.getElementById('le').focus();return}
- me=await r.json();document.getElementById('login').style.display='none';showMe();restore()}
+ if(r.status===401){me=null;document.getElementById('sl').innerHTML='';document.getElementById('lim').innerHTML='';document.getElementById('login').style.display='flex';document.getElementById('le').focus();return}
+ me=await r.json();document.getElementById('login').style.display='none';showMe();restore();loadSessions()}
 document.getElementById('lf').onsubmit=async e=>{e.preventDefault();
  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:le.value,password:lp.value})});
  if(!r.ok){lerr.textContent='Wrong email or password';return}
@@ -117,7 +157,7 @@ async function restore(){
  try{const r=await fetch('/sessions/'+sid);if(!r.ok)throw 0;const h=(await r.json()).messages;
   if(!h.length)return empty();log.innerHTML='';
   h.forEach(m=>{const d=add(m.role==='user'?'u':'b',m.content);if(m.trace_id)d.append(lazyTraceBox(m.trace_id,m.content))})}catch(e){sid=null;saveSid();empty()}}
-document.getElementById('new').onclick=()=>{sid=null;saveSid();empty();q.focus()};
+document.getElementById('new').onclick=()=>{sid=null;saveSid();empty();document.body.classList.remove('nav');loadSessions();q.focus()};
 
 f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disabled)return;
  document.querySelector('.empty')?.remove();q.value='';send.disabled=true;add('u',m);
@@ -142,6 +182,6 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
   if(trace)b.append(traceBox(trace,txt));
  }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+').'}
  try{me=await (await fetch('/me')).json();showMe()}catch(x){}
- send.disabled=false;q.focus()};
+ loadSessions();send.disabled=false;q.focus()};
 boot();
 </script></body></html>

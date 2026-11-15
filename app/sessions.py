@@ -28,11 +28,16 @@ class SessionStore:
                                (sid, 2 * turns)).fetchall()
         return [{"role": r, "content": c} for r, c in reversed(rows)]
 
-    def history_with_trace(self, sid: str, turns: int = config.MAX_TURNS) -> list[dict]:
+    def history_with_trace(self, sid: str, turns: int = 1000) -> list[dict]:
         rows = self.db.execute(
             "SELECT m.id, m.role, m.content, t.msg_id IS NOT NULL FROM messages m LEFT JOIN traces t ON t.msg_id=m.id "
             "WHERE m.sid=? ORDER BY m.id DESC LIMIT ?", (sid, 2 * turns)).fetchall()
         return [{"role": r, "content": c, "trace_id": i if has else None} for i, r, c, has in reversed(rows)]
+
+    def delete_session(self, sid: str) -> None:
+        self.db.execute("DELETE FROM messages WHERE sid=?", (sid,))
+        self.db.execute("DELETE FROM traces WHERE sid=?", (sid,))
+        self.db.commit()
 
     def save_trace(self, sid: str, msg_id: int, trace: dict) -> None:
         self.db.execute("INSERT OR REPLACE INTO traces VALUES (?,?,?)", (msg_id, sid, json.dumps(trace, ensure_ascii=False)))
@@ -48,10 +53,6 @@ class SessionStore:
         self.db.execute("INSERT INTO messages(sid, role, content, ts) VALUES (?,?,?,?)", (sid, "user", user, now))
         msg_id = self.db.execute("INSERT INTO messages(sid, role, content, ts) VALUES (?,?,?,?)",
                                  (sid, "assistant", assistant, now)).lastrowid
-        self.db.execute("DELETE FROM messages WHERE sid=? AND id NOT IN "
-                        "(SELECT id FROM messages WHERE sid=? ORDER BY id DESC LIMIT ?)",
-                        (sid, sid, 2 * config.MAX_TURNS))
-        self.db.execute("DELETE FROM traces WHERE sid=? AND msg_id NOT IN (SELECT id FROM messages WHERE sid=?)", (sid, sid))
         self.db.commit()
         return msg_id
 

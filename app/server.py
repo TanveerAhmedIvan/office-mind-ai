@@ -132,7 +132,7 @@ def change_password(body: PasswordChange, u: dict = Depends(current_user)):
 @app.post("/chat")
 def chat(req: Req, u: dict = Depends(current_user)):
     sid = req.session_id or uuid.uuid4().hex
-    if not auth.claim_session(sid, u["email"]):
+    if not auth.claim_session(sid, u["email"], req.message):
         raise HTTPException(403, "this chat belongs to another user")
     usage_id = auth.start_usage(u["email"], len(req.message))
     if usage_id is None:
@@ -178,6 +178,21 @@ def chat(req: Req, u: dict = Depends(current_user)):
 @app.post("/feedback")
 def feedback(fb: Feedback, u: dict = Depends(current_user)):
     store.add_feedback(fb.session_id, fb.rating, fb.question, fb.answer)
+    return {"ok": True}
+
+
+@app.get("/sessions")
+def list_sessions(u: dict = Depends(current_user)):
+    return auth.list_sessions(u["email"])
+
+
+@app.delete("/sessions/{sid}")
+def delete_session(sid: str, u: dict = Depends(current_user)):
+    owner = auth.session_owner(sid)
+    if owner and owner != u["email"] and u["role"] != "admin":
+        raise HTTPException(403, "this chat belongs to another user")
+    store.delete_session(sid)
+    auth.delete_session_owner(sid)
     return {"ok": True}
 
 

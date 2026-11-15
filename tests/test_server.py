@@ -97,3 +97,20 @@ def test_daily_limit_returns_429_and_admin_sees_usage(monkeypatch):
     row = next(x for x in admin.get("/admin/usage").json() if x["email"] == "ivan@nodi.tech")
     assert row["today"] == 1 and row["limit"] == 1 and row["tokens_out"] > 0
     assert cl.get("/admin/usage").status_code == 403
+
+
+def test_session_list_full_history_and_delete(monkeypatch):
+    cl, st = client(monkeypatch)
+    login(cl)
+    sid = None
+    for i in range(8):  # more than 6 turns: all kept for display, model context still trimmed
+        r = cl.post("/chat", json={"message": f"question {i}", "session_id": sid})
+        sid = r.text.split('"session_id": "')[1].split('"')[0]
+    lst = cl.get("/sessions").json()
+    assert len(lst) == 1 and lst[0]["sid"] == sid and lst[0]["title"] == "question 0" and lst[0]["messages"] == 16
+    assert len(cl.get("/sessions/" + sid).json()["messages"]) == 16 and len(st.history(sid)) == 12
+    other = TestClient(server.app)
+    server.auth.create_user("b@nodi.tech", "B", "password1", "user"); login(other, "b@nodi.tech", "password1")
+    assert other.get("/sessions").json() == [] and other.delete("/sessions/" + sid).status_code == 403
+    assert cl.delete("/sessions/" + sid).status_code == 200
+    assert cl.get("/sessions").json() == [] and cl.get("/sessions/" + sid).json()["messages"] == []

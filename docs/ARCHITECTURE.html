@@ -100,6 +100,9 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <b>Writes</b><span>Inserts the user and assistant messages into <code>chat_data/sessions.db</code> and deletes rows older than the last 6 turns for that session.</span></div></div></div>
 </div>
 
+<h2>2a. Sidebar: previous chats and limit status</h2>
+<p class="sub">The left sidebar lists the signed-in user's chats (<code>GET /sessions</code>, newest first; title = first question; owner = <code>session_owner</code> table). Clicking one reloads it with <code>GET /sessions/{id}</code> and its traces; the × deletes it (<code>DELETE /sessions/{id}</code>, messages + traces). The full chat is stored for 30 days, while the model still receives only the last 6 turns. The panel above the list shows messages used today against the daily limit (bar turns amber at 80% and red at the limit) from <code>GET /me</code>. On a phone the sidebar opens with the menu button.</p>
+
 <h2>2b. Per-chat trace view in the UI</h2>
 <p class="sub">Under every answer, <b>How this was answered</b> opens the same 9 steps as above filled with the real values of that question: user, role and allowed documents; guard result; rewritten question; top vector hits (cosine); top keyword hits (BM25); fused candidates; the 5 reranked chunks with scores, snippets and the SUPERSEDED penalty; prompt size; first-token and total LLM time. A timeline bar shows where the time went, and the file chips show which retrieved files the answer actually cited. Data: <code>hybrid_search(trace=…)</code> and <code>server.py chat()</code> build it; it is sent as an SSE <code>trace</code> event, stored in the <code>traces</code> table, and reloaded with <code>GET /traces/{id}</code> (owner or admin only).</p>
 

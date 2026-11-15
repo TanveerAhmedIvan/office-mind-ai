@@ -36,6 +36,8 @@ class AuthStore:
             "day TEXT NOT NULL, ts REAL NOT NULL, q_chars INTEGER NOT NULL, a_chars INTEGER NOT NULL DEFAULT 0)",
             "CREATE INDEX IF NOT EXISTS idx_usage ON usage(email, day)"):
             db.execute(ddl)
+        if "title" not in [r[1] for r in db.execute("PRAGMA table_info(session_owner)")]:
+            db.execute("ALTER TABLE session_owner ADD COLUMN title TEXT")
         if "daily_limit" not in [r[1] for r in db.execute("PRAGMA table_info(users)")]:
             db.execute("ALTER TABLE users ADD COLUMN daily_limit INTEGER")  # NULL = default limit
         db.commit()
@@ -182,12 +184,24 @@ class AuthStore:
         return out
 
     # ---- chat session ownership ----
-    def claim_session(self, sid: str, email: str) -> bool:
+    def claim_session(self, sid: str, email: str, title: str = "") -> bool:
         row = self.db.execute("SELECT email FROM session_owner WHERE sid=?", (sid,)).fetchone()
         if row:
             return row[0] == email
-        self.db.execute("INSERT INTO session_owner VALUES (?,?)", (sid, email)); self.db.commit()
+        self.db.execute("INSERT INTO session_owner(sid, email, title) VALUES (?,?,?)", (sid, email, title.strip()[:80]))
+        self.db.commit()
         return True
+
+    def list_sessions(self, email: str, limit: int = 100) -> list[dict]:
+        """The user's chats that still have messages, newest first."""
+        rows = self.db.execute(
+            "SELECT o.sid, COALESCE(NULLIF(o.title, ''), (SELECT content FROM messages WHERE sid=o.sid AND role='user' ORDER BY id LIMIT 1)), "
+            "MAX(m.ts), COUNT(m.id) FROM session_owner o JOIN messages m ON m.sid=o.sid "
+            "WHERE o.email=? GROUP BY o.sid ORDER BY MAX(m.ts) DESC LIMIT ?", (email, limit)).fetchall()
+        return [{"sid": sid, "title": title or "New chat", "updated": ts, "messages": n} for sid, title, ts, n in rows]
+
+    def delete_session_owner(self, sid: str) -> None:
+        self.db.execute("DELETE FROM session_owner WHERE sid=?", (sid,)); self.db.commit()
 
     def session_owner(self, sid: str) -> str | None:
         row = self.db.execute("SELECT email FROM session_owner WHERE sid=?", (sid,)).fetchone()
