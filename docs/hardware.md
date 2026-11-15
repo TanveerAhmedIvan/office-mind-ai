@@ -15,3 +15,6 @@ Dev PC role: develop/evaluate pipeline, larger-model experiments.
 - Everything must run CPU-only on the office PC: CPU torch, small quantized LLM (Qwen2.5 1.5B/3B Q4), watch bge-m3 + reranker RAM (~2.5GB + ~2.3GB).
 - Evaluate latency on CPU; GPU is a dev-only speedup. Embeddings are computed once at index time.
 - Pending from user: output of PowerShell hardware query from the office PC.
+
+## Verified on the office PC (2026-11-15, from inside WSL)
+Ryzen 5 3400G (8 threads), 1TB disk (897G free), WSL2 kernel 6.18, **WSL RAM only ~6GB (no .wslconfig)** -> set memory=11GB.

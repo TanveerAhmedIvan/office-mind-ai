@@ -21,6 +21,17 @@
 ## M6 Evaluation (feat/m6-eval)
 - [x] eval/run_eval.py: hit@5 + fact-matching grader (yes/no core-claim, refusal check, hard rules for Q38/Q40/18-vs-15); JSON reports in eval/reports/
 - [ ] OPEN (post-M6): Q15 partial (no 'wait/retry'), Q17 SEC-EXC 'I don't know', Q30 omits 31 March, Q33 omits guest price 200, Q38 'I don't know'. Ideas: contextual retrieval, qwen2.5:7b on dev PC, answer-completeness prompt, nomic vs bge-m3 comparison
+## Post-M6 work (branch feat/architecture-and-session-persistence)
+- [x] docs/ARCHITECTURE.html: visual of indexing + 9-step chat flow, files, sessions, status, missing data
+- [x] T1 Persistent chat sessions (SQLite chat_data/sessions.db, 6 turns, 30-day expiry), 4 tests
+- [ ] T2 GET /sessions/{id}; UI restores session id from localStorage
+- [ ] T3 Debug panel (chunks + scores; already in the `meta` SSE event)
+- [ ] T4 Thumbs up/down feedback log (SQLite)
+- [ ] T5 Login + per-user sessions. Users: admin@nodi.tech (admin), ivan@nodi.tech (user). Sign-in method TBD
+- [ ] T6 Department metadata filter (needs document -> department map)
+- [ ] T7 calculate_expense_approval(amount) tool (needs thresholds from the PDF)
+- [ ] T9 Re-enable relevance guard with a better threshold (needs labelled Bangla data)
+
 ## Stretch
 - [ ] contextual retrieval, debug panel, metadata filter, feedback log, calculate_expense_approval tool
 
@@ -28,8 +39,11 @@
 - [ ] User to run PowerShell hardware query on office PC (storage, Windows version) -> update docs/hardware.md
 - [ ] Benchmark embed/rerank/LLM latency + RAM on CPU; choose LLM size (1.5B vs 3B) by eval score vs speed
 
-## Office PC deployment (tomorrow)
+## Office PC deployment (THIS machine: Ryzen 5 3400G, 8 threads, 1TB disk, WSL2)
 - [x] docs/OFFICE_PC_SETUP.md, scripts/setup_wsl.sh, run_wsl.sh, setup_office_pc.ps1 (untested), eval/bench.py
-- [ ] Run setup on office PC (WSL available there), send hardware report + `eval.bench qwen2.5:3b 4` output
+- [x] Setup done here: venv, index (qdrant_data), Ollama + qwen2.5:3b pulled (2026-11-15), 4 session/server tests pass
+- [ ] FIX: WSL has only ~6GB RAM and no C:\Users\<you>\.wslconfig -> WSL restarts under load. Set memory=11GB, processors=4, swap=4GB, then `wsl --shutdown`
+- [ ] Run jobs ONE AT A TIME (server smoke test, then eval); eval was killed at 6/40 (Q05 medical certificate wrong so far)
+- [ ] Record `eval.bench qwen2.5:3b 4` output and CPU latency per answer
 - [ ] Decide model (3B vs 4B candidates) from CPU latency + Bangla accuracy; consider cutting rerank pool
 - [ ] LAN access (mirrored networking or portproxy) + add auth before sharing with staff
