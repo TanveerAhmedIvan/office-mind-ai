@@ -1,0 +1,31 @@
+/* ---- sidebar ---- */
+.side{width:272px;flex:none;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:12px;gap:10px}
+.side #new{width:100%;padding:10px;border:1px solid var(--acc);background:none;color:var(--acc);border-radius:10px;font-size:15px;cursor:pointer;font-weight:600}
+.side #new:hover{background:var(--acc);color:#fff}
+.lim{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.lim b{font-size:14px}.lim .bar{height:6px;border-radius:3px;background:var(--line);margin:6px 0 4px;overflow:hidden}.lim .bar i{display:block;height:100%;background:var(--ok)}
+.lim.warn .bar i{background:var(--warn)}.lim.full .bar i{background:var(--err)}.lim.full b{color:var(--err)}.lim small{color:var(--mut)}
+.side h3{margin:4px 0 0;font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+#sl{flex:1;overflow:auto;display:flex;flex-direction:column;gap:2px;margin:0 -4px;padding:0 4px}
+.si{display:flex;align-items:center;gap:4px;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:14px;border:1px solid transparent}
+.si:hover{background:var(--bg)}.si.on{background:var(--bg);border-color:var(--acc)}
+.si div{flex:1;min-width:0}.si .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.si .d{font-size:11.5px;color:var(--mut)}
+.si button{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px;visibility:hidden;padding:0 4px}.si:hover button{visibility:visible}.si button:hover{color:var(--err)}
+.none{color:var(--mut);font-size:13px;padding:6px 8px}
+#menu{display:none}
+.acct{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
+.acct .who{font-size:12.5px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
+.acct a,.acct button{display:block;text-align:left;background:none;border:0;border-radius:8px;padding:7px 8px;font-size:14px;color:var(--fg);text-decoration:none;cursor:pointer;font-family:inherit}
+.acct a:hover,.acct button:hover{background:var(--bg)}.acct #out{color:var(--err)}
+.admlinks{display:none;flex-direction:column;gap:2px;margin-bottom:4px}.admlinks h3{margin:2px 0 2px 8px}.admlinks a{color:var(--acc)}
+@media(max-width:760px){.side{position:fixed;inset:0 auto 0 0;z-index:4;transform:translateX(-100%);transition:transform .2s;width:80%;max-width:300px}
+ body.nav .side{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.4)}#menu{display:inline-block}}
+/* shared layout for every page that has the sidebar */
+.side{--ok:#0f8a5f;--warn:#b45309}
+@media(prefers-color-scheme:dark){.side{--ok:#4cd3a0;--warn:#f0b25a}}
+body.has-side{margin:0;display:flex;height:100vh;height:100dvh;overflow:hidden}
+body.has-side>.content{flex:1;min-width:0;overflow:auto}
+.side a.cur{background:var(--bg);color:var(--acc);font-weight:600}
+.side{overflow:hidden}
+.fab{display:none;position:fixed;top:10px;left:10px;z-index:3;background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer}
+@media(max-width:760px){.fab{display:block}body.has-side>.content{padding-top:48px}}

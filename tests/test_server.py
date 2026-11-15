@@ -118,7 +118,18 @@ def test_session_list_full_history_and_delete(monkeypatch):
 
 def test_account_pages_served_and_password_flow(monkeypatch):
     cl, _ = client(monkeypatch)
-    for path, marker in (("/password", "Change password"), ("/admin", "OfficeMind Admin"), ("/", "+ New chat")):
+    for path, marker in (("/password", "Change password"), ("/admin", "OfficeMind Admin"), ("/", "OfficeMind AI")):
         r = cl.get(path)
         assert r.status_code == 200 and marker in r.text
-    assert 'href="/admin#create-user"' in cl.get("/").text and 'id="create-role"' in cl.get("/admin").text
+    js = cl.get("/assets/sidebar.js").text  # shared sidebar: account + admin links
+    assert 'href="/admin#create-user"' in js and 'href="/password"' in js and "Sign out" in js and "+ New chat" in js
+    assert 'id="create-role"' in cl.get("/admin").text and 'id="create-user"' in cl.get("/admin").text
+
+
+def test_sidebar_assets_and_every_page_uses_them(monkeypatch):
+    cl, _ = client(monkeypatch)
+    assert "window.Sidebar" in cl.get("/assets/sidebar.js").text and ".side" in cl.get("/assets/sidebar.css").text
+    for path in ("/", "/admin", "/password"):
+        t = cl.get(path).text
+        assert "/assets/sidebar.js" in t and 'id="side"' in t and "Sidebar.init" in t
+    assert 'active:\'admin\'' in cl.get("/admin").text and 'active:\'password\'' in cl.get("/password").text

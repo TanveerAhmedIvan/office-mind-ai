@@ -4,13 +4,16 @@
 <style>
 :root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f4f6fa;--line:#d5dbe6;--acc:#2557d6;--err:#c0392b}
 @media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;max-width:1000px;margin:0 auto;padding:16px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+.content{padding:16px}.content>*{max-width:1000px;margin-left:auto;margin-right:auto}
 h1{font-size:20px}h2{font-size:17px;margin-top:28px;border-bottom:1px solid var(--line);padding-bottom:4px}a{color:var(--acc)}
 table{border-collapse:collapse;width:100%;font-size:13.5px;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}th{background:var(--card)}
 input,select,button{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}button{cursor:pointer}button.p{background:var(--acc);color:#fff;border:0}
 .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.docs label{display:block;font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
 #msg{color:var(--err);min-height:22px}.bar{background:var(--line);height:6px;border-radius:3px;width:80px;display:inline-block;vertical-align:middle}.bar i{display:block;height:6px;border-radius:3px;background:var(--acc)}
-</style></head><body>
+</style>
+<link rel="stylesheet" href="/assets/sidebar.css"><script src="/assets/sidebar.js"></script></head><body class="has-side">
+<aside id="side"></aside><div class="content">
 <h1>OfficeMind Admin <a href="/" style="font-size:14px">back to chat</a> <a href="/password" style="font-size:14px">change password</a></h1><div id="msg"></div>
 
 <h2>Usage</h2><p style="color:var(--mut);margin:0">Messages per user. Tokens are approximate (4 characters each). Limit 0 = unlimited.</p>
@@ -51,4 +54,5 @@ async function saveRole(n){await api('PUT','/admin/roles/'+encodeURIComponent(n)
 async function addRole(){if(rn.value.trim()){await api('PUT','/admin/roles/'+encodeURIComponent(rn.value.trim().toLowerCase()),{all_docs:false,docs:[]});rn.value='';load()}}
 async function delRole(n){if(confirm('Delete role '+n+'?')){await api('DELETE','/admin/roles/'+encodeURIComponent(n));load()}}
 load().then(()=>{if(location.hash){const e=document.querySelector(location.hash);if(e){e.scrollIntoView({block:'center'});const i=e.querySelector('input');if(i)i.focus()}}});
-</script></body></html>
+</script></div>
+<script>Sidebar.init({active:'admin'})</script></body></html>

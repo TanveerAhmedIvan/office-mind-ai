@@ -4,6 +4,7 @@ import json, threading, time, uuid
 from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from . import config
 from .auth import AuthStore, TOKEN_TTL, doc_names
@@ -15,6 +16,7 @@ from .sessions import SessionStore
 
 STATIC = Path(__file__).parent.parent / "static"
 app = FastAPI(title="OfficeMind AI")
+app.mount("/assets", StaticFiles(directory=STATIC / "assets"), name="assets")  # shared sidebar css/js only
 store = SessionStore()
 store.purge_expired()
 auth = AuthStore(store.db)
