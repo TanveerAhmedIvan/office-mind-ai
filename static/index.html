@@ -24,8 +24,13 @@ form{display:flex;gap:8px;padding:10px 0 14px}
 input{flex:1;padding:10px 12px;font-size:16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 form button{padding:10px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px;cursor:pointer}
 form button:disabled{opacity:.5;cursor:wait}
+.login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.login form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;padding:0}
+.login h2{margin:0 0 4px}#lerr{color:var(--err);font-size:14px;min-height:20px}
+#who{font-size:12px;color:var(--mut)}header a{color:var(--acc);font-size:13px;display:none}
 </style></head><body>
-<header><h1>OfficeMind AI · Nodi Tech</h1>
+<div class="login" id="login"><form id="lf"><h2>OfficeMind AI</h2><input id="le" type="email" placeholder="Email" autocomplete="username" required><input id="lp" type="password" placeholder="Password" autocomplete="current-password" required><button>Sign in</button><div id="lerr"></div></form></div>
+<header><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button>
 <button id="dbg" aria-pressed="false" title="Show retrieved chunks and scores">Debug</button>
 <button id="new">New chat</button></header>
 <div id="log" aria-live="polite"></div>
@@ -39,6 +44,21 @@ const saveSid=()=>{try{sid?localStorage.setItem('sid',sid):localStorage.removeIt
 function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;log.append(d);log.scrollTop=log.scrollHeight;return d}
 function empty(){log.innerHTML='';const e=document.createElement('div');e.className='empty';e.innerHTML='<p>Ask a question about Nodi Tech documents.</p>';
  SUGGEST.forEach(s=>{const b=document.createElement('button');b.type='button';b.textContent=s;b.onclick=()=>{q.value=s;f.requestSubmit()};e.append(b)});log.append(e)}
+let me=null;
+function showMe(){document.getElementById('who').textContent=me?me.email+' · '+(me.limit?me.used_today+'/'+me.limit+' today':me.used_today+' today'):'';
+ document.getElementById('adm').style.display=me&&me.role==='admin'?'inline':'none'}
+async function boot(){
+ const r=await fetch('/me');
+ if(r.status===401){me=null;document.getElementById('login').style.display='flex';document.getElementById('le').focus();return}
+ me=await r.json();document.getElementById('login').style.display='none';showMe();restore()}
+document.getElementById('lf').onsubmit=async e=>{e.preventDefault();
+ const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:le.value,password:lp.value})});
+ if(!r.ok){lerr.textContent='Wrong email or password';return}
+ lp.value='';lerr.textContent='';sid=null;saveSid();boot()};
+document.getElementById('out').onclick=async()=>{await fetch('/logout',{method:'POST'});sid=null;saveSid();log.innerHTML='';boot()};
+document.getElementById('pw').onclick=async()=>{const o=prompt('Current password');if(o===null)return;const n=prompt('New password (min 8 characters)');if(!n)return;
+ const r=await fetch('/me/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});
+ alert(r.ok?'Password changed. Please sign in again.':((await r.json()).detail||'Failed'));if(r.ok){await fetch('/logout',{method:'POST'});boot()}};
 async function restore(){
  if(!sid)return empty();
  try{const r=await fetch('/sessions/'+sid);if(!r.ok)throw 0;const h=(await r.json()).messages;
@@ -51,7 +71,8 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
  const b=add('b','…');let txt='',meta=null;
  try{
   const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,session_id:sid})});
-  if(!r.ok)throw new Error('Server error '+r.status);
+  if(r.status===401){boot();throw new Error('Please sign in again')}
+  if(!r.ok){let d='';try{d=(await r.json()).detail}catch(x){}throw new Error(d||'Server error '+r.status)}
   const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
   while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
    let i;while((i=buf.indexOf('\n\n'))>=0){const blk=buf.slice(0,i);buf=buf.slice(i+2);
@@ -66,7 +87,8 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
      try{await fetch('/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sid,rating:r,question:m,answer:txt})})}catch(e){}};fb.append(x)});b.append(fb)}
   if(meta){const d=document.createElement('div');d.className='dbg';
    d.textContent='standalone: '+meta.standalone+'\n'+meta.chunks.map(c=>c.score.toFixed(3)+'  '+c.id).join('\n');b.append(d)}
- }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+'). Check that the server and Ollama are running, then try again.'}
+ }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+').'}
+ try{me=await (await fetch('/me')).json();showMe()}catch(x){}
  send.disabled=false;q.focus()};
-restore();
+boot();
 </script></body></html>

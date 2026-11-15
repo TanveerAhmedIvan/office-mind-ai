@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OfficeMind Admin</title>
+<style>
+:root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f4f6fa;--line:#d5dbe6;--acc:#2557d6;--err:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif;max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:20px}h2{font-size:17px;margin-top:28px;border-bottom:1px solid var(--line);padding-bottom:4px}a{color:var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}th{background:var(--card)}
+input,select,button{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}button{cursor:pointer}button.p{background:var(--acc);color:#fff;border:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.docs label{display:block;font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
+#msg{color:var(--err);min-height:22px}.bar{background:var(--line);height:6px;border-radius:3px;width:80px;display:inline-block;vertical-align:middle}.bar i{display:block;height:6px;border-radius:3px;background:var(--acc)}
+</style></head><body>
+<h1>OfficeMind Admin <a href="/" style="font-size:14px">back to chat</a></h1><div id="msg"></div>
+
+<h2>Usage</h2><p style="color:var(--mut);margin:0">Messages per user. Tokens are approximate (4 characters each). Limit 0 = unlimited.</p>
+<table id="usage"></table>
+
+<h2>Users</h2><table id="users"></table>
+<div class="row"><input id="ne" placeholder="email" type="email"><input id="nn" placeholder="name"><input id="np" placeholder="password (min 8)" type="password"><select id="nr"></select><input id="nl" type="number" min="0" placeholder="daily limit (blank = default)" style="width:200px"><button class="p" onclick="addUser()">Create user</button></div>
+
+<h2>Roles and document permissions</h2><div id="roles"></div>
+<div class="row"><input id="rn" placeholder="new role name"><button class="p" onclick="addRole()">Create role</button></div>
+
+<script>
+const $=id=>document.getElementById(id);let DOCS=[],ROLES=[];
+async function api(m,u,b){const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});
+ if(r.status===401||r.status===403){location.href='/';throw 0}
+ const j=await r.json();if(!r.ok){$('msg').textContent=j.detail||'Error';throw 0}$('msg').textContent='';return j}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function load(){
+ DOCS=await api('GET','/admin/docs');ROLES=await api('GET','/admin/roles');
+ const U=await api('GET','/admin/users'),G=await api('GET','/admin/usage');
+ $('nr').innerHTML=ROLES.map(r=>`<option>${esc(r.name)}</option>`).join('');
+ $('usage').innerHTML='<tr><th>User</th><th>Today / limit</th><th></th><th>7 days</th><th>Total</th><th>Tokens in</th><th>Tokens out</th><th>Last used</th></tr>'+
+  G.map(u=>`<tr><td>${esc(u.email)}</td><td>${u.today} / ${u.limit||'∞'}</td><td>${u.limit?`<span class="bar"><i style="width:${Math.min(100,100*u.today/u.limit)}%"></i></span>`:''}</td><td>${u.week}</td><td>${u.total}</td><td>${u.tokens_in}</td><td>${u.tokens_out}</td><td>${esc(u.last_used||'never')}</td></tr>`).join('');
+ $('users').innerHTML='<tr><th>Email</th><th>Name</th><th>Role</th><th>Active</th><th>Daily limit</th><th></th></tr>'+U.map(u=>{const g=G.find(x=>x.email===u.email)||{};
+  return `<tr><td>${esc(u.email)}</td><td>${esc(u.name)}</td><td><select onchange="patch('${esc(u.email)}',{role:this.value})">${ROLES.map(r=>`<option${r.name===u.role?' selected':''}>${esc(r.name)}</option>`).join('')}</select></td>
+  <td><input type="checkbox"${u.active?' checked':''} onchange="patch('${esc(u.email)}',{active:this.checked})"></td>
+  <td><input type="number" min="0" value="${g.limit}" style="width:80px" onchange="patch('${esc(u.email)}',{daily_limit:+this.value})"> <button onclick="patch('${esc(u.email)}',{daily_limit:-1})">default</button></td>
+  <td><button onclick="resetPw('${esc(u.email)}')">Set password</button> <button onclick="delUser('${esc(u.email)}')">Delete</button></td></tr>`}).join('');
+ $('roles').innerHTML=ROLES.map(r=>`<div class="card"><b>${esc(r.name)}</b>${r.name==='admin'?' (always all documents)':''}
+  <label style="margin-left:12px"><input type="checkbox" id="all-${esc(r.name)}"${r.all_docs?' checked':''}${r.name==='admin'?' disabled':''}> all documents</label>
+  <div class="docs">${DOCS.map(d=>`<label><input type="checkbox" class="d-${esc(r.name)}" value="${esc(d)}"${r.docs.includes(d)?' checked':''}> ${esc(d)}</label>`).join('')}</div>
+  <div class="row"><button class="p" onclick="saveRole('${esc(r.name)}')">Save</button>${r.name==='admin'?'':`<button onclick="delRole('${esc(r.name)}')">Delete role</button>`}</div></div>`).join('')}
+async function patch(e,b){await api('PATCH','/admin/users/'+encodeURIComponent(e),b);load()}
+async function addUser(){await api('POST','/admin/users',{email:ne.value,name:nn.value,password:np.value,role:nr.value,daily_limit:nl.value===''?null:+nl.value});ne.value=nn.value=np.value=nl.value='';load()}
+async function resetPw(e){const p=prompt('New password for '+e+' (min 8 characters)');if(p)patch(e,{password:p})}
+async function delUser(e){if(confirm('Delete '+e+'?')){await api('DELETE','/admin/users/'+encodeURIComponent(e));load()}}
+async function saveRole(n){await api('PUT','/admin/roles/'+encodeURIComponent(n),{all_docs:document.getElementById('all-'+n).checked,docs:[...document.querySelectorAll('.d-'+CSS.escape(n)+':checked')].map(x=>x.value)});$('msg').textContent='';load()}
+async function addRole(){if(rn.value.trim()){await api('PUT','/admin/roles/'+encodeURIComponent(rn.value.trim().toLowerCase()),{all_docs:false,docs:[]});rn.value='';load()}}
+async function delRole(n){if(confirm('Delete role '+n+'?')){await api('DELETE','/admin/roles/'+encodeURIComponent(n));load()}}
+load();
+</script></body></html>

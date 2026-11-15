@@ -28,7 +28,10 @@
 - [x] T3 Debug panel in UI (Debug button: standalone question + chunk scores)
 - [x] UI rewrite: dark mode, mobile, New chat, suggestion chips, source chips, error message, send disabled while streaming
 - [x] T4 Thumbs up/down feedback: POST /feedback -> SQLite `feedback` table (kept after chat expiry); UI buttons; 2 tests
-- [ ] T5 Login + per-user sessions. Users: admin@nodi.tech (admin), ivan@nodi.tech (user). Sign-in method TBD
+- [x] T5 Login (email + password, scrypt hash, httpOnly cookie, 12h token). Users admin@nodi.tech (admin), ivan@nodi.tech (user), both password `password` -> CHANGE (UI: Password button; admin can set). Chats owned per user; admin may read any. 
+- [x] Admin page /admin: create/disable/delete users, set role, set password, roles + per-role document permissions (all docs or a list), usage table
+- [x] Usage + limits: default 50 messages/user/day (DEFAULT_DAILY_LIMIT), per-user override (0 = unlimited), HTTP 429 when over; usage per user: today/7d/total, approx tokens in/out, last used
+- [ ] SECURITY: default password is `password` and the server is on the LAN. Change both passwords before staff use; consider forcing change at first login
 - [ ] T6 Department metadata filter (needs document -> department map)
 - [ ] T7 calculate_expense_approval(amount) tool (needs thresholds from the PDF)
 - [ ] T9 Re-enable relevance guard with a better threshold (needs labelled Bangla data)

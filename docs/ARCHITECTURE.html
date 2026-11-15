@@ -115,15 +115,15 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>4. Implementation status</h2>
 <table><tr><th>Area</th><th>Status</th><th>Note</th></tr>
 <tr><td>Ingestion, vector, hybrid, rerank, chat, guardrails, eval</td><td class="ok">Done</td><td>M1 to M6 merged</td></tr>
-<tr><td>Chat sessions</td><td class="ok">Done (T1)</td><td>SQLite, 6 turns, 30-day expiry. Not yet tied to a user</td></tr>
+<tr><td>Chat sessions</td><td class="ok">Done (T1)</td><td>SQLite, 6 turns, 30-day expiry. Owned by the logged-in user</td></tr>
 <tr><td>Relevance guard</td><td class="part">Off</td><td>Scores overlap for romanized Bangla; the LLM refuses by itself</td></tr>
-<tr><td>Login and permissions</td><td class="no">Missing</td><td>LAN only, no auth</td></tr>
-<tr><td>Chat history storage, feedback log</td><td class="no">Missing</td><td>See <code>.claude/TODO.md</code></td></tr>
+<tr><td>Login, roles, document permissions, admin page, usage limits</td><td class="ok">Done (T5, T6)</td><td>Default passwords must be changed</td></tr>
+<tr><td>Chat history, feedback log</td><td class="ok">Done (T1, T4)</td><td>SQLite</td></tr>
 <tr><td>Debug panel, metadata filter, expense tool</td><td class="no">Missing</td><td>Stretch goals</td></tr></table>
 
-<h2>5. Users (so far)</h2>
-<table><tr><th>Email</th><th>Role</th><th>Status</th></tr><tr><td>admin@nodi.tech</td><td>admin</td><td>Known; no login yet</td></tr><tr><td>ivan@nodi.tech</td><td>user</td><td>Known; no login yet</td></tr></table>
-<p class="sub">Planned: login (T5) checks the email, owns each session to a user, and lets admin view all chats. Not built.</p>
+<h2>5. Users, roles, permissions, limits</h2>
+<table><tr><th>Email</th><th>Role</th><th>Documents</th><th>Password</th></tr><tr><td>admin@nodi.tech</td><td>admin</td><td>all (cannot be reduced)</td><td>password (change it)</td></tr><tr><td>ivan@nodi.tech</td><td>user</td><td>all</td><td>password (change it)</td></tr></table>
+<p class="sub">Every request needs a login cookie (<code>app/auth.py</code>, tables in <code>chat_data/sessions.db</code>). At step 1 of a chat the server also (a) checks the daily message limit (default 50 per user, HTTP 429 when reached), (b) claims the session for the user, and (c) looks up the role's allowed files, which are passed to <code>vector.search</code> (Qdrant filter) and <code>bm25_search</code> so forbidden documents are never retrieved. Admin page <code>/admin</code> manages users, roles, document permissions and shows usage per user (today, 7 days, total, approximate tokens).</p>
 
 <h2>6. Extra data needed from you</h2>
 <table><tr><th>Needed</th><th>Why</th></tr>

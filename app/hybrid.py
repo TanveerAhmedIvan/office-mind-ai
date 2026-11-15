@@ -26,10 +26,11 @@ def _bm25() -> tuple[BM25Okapi, list[Chunk]]:
     return BM25Okapi([tokenize(c.text) for c in chunks]), chunks
 
 
-def bm25_search(query: str, k: int = 20) -> list[tuple[Chunk, float]]:
+def bm25_search(query: str, k: int = 20, allowed: set[str] | None = None) -> list[tuple[Chunk, float]]:
     bm, chunks = _bm25()
     scores = bm.get_scores(tokenize(query))
-    order = sorted(range(len(chunks)), key=lambda i: -scores[i])[:k]
+    order = sorted((i for i in range(len(chunks)) if allowed is None or chunks[i].source in allowed),
+                   key=lambda i: -scores[i])[:k]
     return [(chunks[i], float(scores[i])) for i in order if scores[i] > 0]
 
 
@@ -48,9 +49,9 @@ def _reranker():
 
 
 def hybrid_search(query: str, k: int = 5, rerank: bool = True, pool: int = 20,
-                  client=None) -> list[dict]:
-    vec = vector.search(query, pool, client)
-    lex = bm25_search(query, pool)
+                  client=None, allowed: set[str] | None = None) -> list[dict]:
+    vec = vector.search(query, pool, client, allowed)
+    lex = bm25_search(query, pool, allowed)
     for r in vec:
         r["vscore"] = r["score"]  # keep raw cosine similarity; "score" is overwritten by rerank below
     by_id = {r["id"]: r for r in vec}

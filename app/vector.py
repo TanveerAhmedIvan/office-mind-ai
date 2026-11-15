@@ -40,9 +40,14 @@ def build_index(chunks: list[Chunk] | None = None, client: QdrantClient | None =
     return len(chunks)
 
 
-def search(query: str, k: int = 5, client: QdrantClient | None = None) -> list[dict]:
+def search(query: str, k: int = 5, client: QdrantClient | None = None, allowed: set[str] | None = None) -> list[dict]:
+    """allowed: restrict to these source files (None = all)."""
+    if allowed is not None and not allowed:
+        return []
     client = client or get_client()
-    res = client.query_points(config.COLLECTION, query=embed([query])[0], limit=k,
+    flt = None if allowed is None else models.Filter(must=[models.FieldCondition(
+        key="source", match=models.MatchAny(any=sorted(allowed)))])
+    res = client.query_points(config.COLLECTION, query=embed([query])[0], limit=k, query_filter=flt,
                               with_payload=True).points
     return [{"score": p.score, **p.payload} for p in res]
 
