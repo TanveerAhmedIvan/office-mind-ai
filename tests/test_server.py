@@ -114,3 +114,11 @@ def test_session_list_full_history_and_delete(monkeypatch):
     assert other.get("/sessions").json() == [] and other.delete("/sessions/" + sid).status_code == 403
     assert cl.delete("/sessions/" + sid).status_code == 200
     assert cl.get("/sessions").json() == [] and cl.get("/sessions/" + sid).json()["messages"] == []
+
+
+def test_account_pages_served_and_password_flow(monkeypatch):
+    cl, _ = client(monkeypatch)
+    for path, marker in (("/password", "Change password"), ("/admin", "OfficeMind Admin"), ("/", "+ New chat")):
+        r = cl.get(path)
+        assert r.status_code == 200 and marker in r.text
+    assert 'href="/admin#create-user"' in cl.get("/").text and 'id="create-role"' in cl.get("/admin").text

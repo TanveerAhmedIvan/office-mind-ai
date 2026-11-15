@@ -30,6 +30,7 @@
 - [x] T4 Thumbs up/down feedback: POST /feedback -> SQLite `feedback` table (kept after chat expiry); UI buttons; 2 tests
 - [x] T5 Login (email + password, scrypt hash, httpOnly cookie, 12h token). Users admin@nodi.tech (admin), ivan@nodi.tech (user), both password `password` -> CHANGE (UI: Password button; admin can set). Chats owned per user; admin may read any. 
 - [x] Sidebar (2026-11-15): previous chats list (title = first question, time, delete), + New chat, daily-limit status panel (used/limit bar, warn at 80%, red at limit). Full chat is now stored (30-day expiry); the model still gets only the last 6 turns. Endpoints GET /sessions, DELETE /sessions/{sid}. Phone: sidebar behind the menu button
+- [x] Account area (2026-11-15): /password page (current + new + confirm, validation, signs out after change); sidebar bottom now holds email/role, Change password, Sign out; admins also get + Create user, + Create role, Users/roles/usage (deep links /admin#create-user, /admin#create-role). Header buttons removed
 - [x] tests/conftest.py: tests use an in-memory DB (a running server locks the real one)
 - [x] Per-chat trace view ("How this was answered" under every answer, saved in SQLite, reloadable): 9 steps with file/function, values, ms, timeline bar, files retrieved vs cited, superseded penalty
 - [x] Admin page /admin: create/disable/delete users, set role, set password, roles + per-role document permissions (all docs or a list), usage table

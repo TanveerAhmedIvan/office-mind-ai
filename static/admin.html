@@ -11,16 +11,16 @@ input,select,button{font:inherit;padding:6px 8px;border-radius:8px;border:1px so
 .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.docs label{display:block;font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
 #msg{color:var(--err);min-height:22px}.bar{background:var(--line);height:6px;border-radius:3px;width:80px;display:inline-block;vertical-align:middle}.bar i{display:block;height:6px;border-radius:3px;background:var(--acc)}
 </style></head><body>
-<h1>OfficeMind Admin <a href="/" style="font-size:14px">back to chat</a></h1><div id="msg"></div>
+<h1>OfficeMind Admin <a href="/" style="font-size:14px">back to chat</a> <a href="/password" style="font-size:14px">change password</a></h1><div id="msg"></div>
 
 <h2>Usage</h2><p style="color:var(--mut);margin:0">Messages per user. Tokens are approximate (4 characters each). Limit 0 = unlimited.</p>
 <table id="usage"></table>
 
 <h2>Users</h2><table id="users"></table>
-<div class="row"><input id="ne" placeholder="email" type="email"><input id="nn" placeholder="name"><input id="np" placeholder="password (min 8)" type="password"><select id="nr"></select><input id="nl" type="number" min="0" placeholder="daily limit (blank = default)" style="width:200px"><button class="p" onclick="addUser()">Create user</button></div>
+<div class="row" id="create-user"><input id="ne" placeholder="email" type="email"><input id="nn" placeholder="name"><input id="np" placeholder="password (min 8)" type="password"><select id="nr"></select><input id="nl" type="number" min="0" placeholder="daily limit (blank = default)" style="width:200px"><button class="p" onclick="addUser()">Create user</button></div>
 
 <h2>Roles and document permissions</h2><div id="roles"></div>
-<div class="row"><input id="rn" placeholder="new role name"><button class="p" onclick="addRole()">Create role</button></div>
+<div class="row" id="create-role"><input id="rn" placeholder="new role name"><button class="p" onclick="addRole()">Create role</button></div>
 
 <script>
 const $=id=>document.getElementById(id);let DOCS=[],ROLES=[];
@@ -50,5 +50,5 @@ async function delUser(e){if(confirm('Delete '+e+'?')){await api('DELETE','/admi
 async function saveRole(n){await api('PUT','/admin/roles/'+encodeURIComponent(n),{all_docs:document.getElementById('all-'+n).checked,docs:[...document.querySelectorAll('.d-'+CSS.escape(n)+':checked')].map(x=>x.value)});$('msg').textContent='';load()}
 async function addRole(){if(rn.value.trim()){await api('PUT','/admin/roles/'+encodeURIComponent(rn.value.trim().toLowerCase()),{all_docs:false,docs:[]});rn.value='';load()}}
 async function delRole(n){if(confirm('Delete role '+n+'?')){await api('DELETE','/admin/roles/'+encodeURIComponent(n));load()}}
-load();
+load().then(()=>{if(location.hash){const e=document.querySelector(location.hash);if(e){e.scrollIntoView({block:'center'});const i=e.querySelector('input');if(i)i.focus()}}});
 </script></body></html>

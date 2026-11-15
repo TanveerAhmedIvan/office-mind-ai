@@ -42,6 +42,11 @@ form button:disabled{opacity:.5;cursor:wait}
 .si button{background:none;border:0;color:var(--mut);cursor:pointer;font-size:16px;visibility:hidden;padding:0 4px}.si:hover button{visibility:visible}.si button:hover{color:var(--err)}
 .none{color:var(--mut);font-size:13px;padding:6px 8px}
 #menu{display:none}
+.acct{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
+.acct .who{font-size:12.5px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
+.acct a,.acct button{display:block;text-align:left;background:none;border:0;border-radius:8px;padding:7px 8px;font-size:14px;color:var(--fg);text-decoration:none;cursor:pointer;font-family:inherit}
+.acct a:hover,.acct button:hover{background:var(--bg)}.acct #out{color:var(--err)}
+.admlinks{display:none;flex-direction:column;gap:2px;margin-bottom:4px}.admlinks h3{margin:2px 0 2px 8px}.admlinks a{color:var(--acc)}
 @media(max-width:760px){.side{position:fixed;inset:0 auto 0 0;z-index:4;transform:translateX(-100%);transition:transform .2s;width:80%;max-width:300px}
  body.nav .side{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.4)}#menu{display:inline-block}}
 /* ---- trace view ---- */
@@ -64,9 +69,12 @@ table.h td:last-child,table.h th:last-child{text-align:right;font-variant-numeri
 </style></head><body>
 <div class="login" id="login"><form id="lf"><h2>OfficeMind AI</h2><input id="le" type="email" placeholder="Email" autocomplete="username" required><input id="lp" type="password" placeholder="Password" autocomplete="current-password" required><button>Sign in</button><div id="lerr"></div></form></div>
 <aside class="side" id="side"><button id="new">+ New chat</button>
-<div class="lim" id="lim"></div><h3>Previous chats</h3><div id="sl"></div></aside>
+<div class="lim" id="lim"></div><h3>Previous chats</h3><div id="sl"></div>
+<div class="acct"><div id="who" class="who"></div>
+<div id="adm" class="admlinks"><h3>Admin</h3><a href="/admin#create-user">＋ Create user</a><a href="/admin#create-role">＋ Create role</a><a href="/admin">Users, roles &amp; usage</a></div>
+<a href="/password">Change password</a><button id="out">Sign out</button></div></aside>
 <div class="main">
-<header><button id="menu" aria-label="Chats">☰</button><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button></header>
+<header><button id="menu" aria-label="Chats">☰</button><h1>OfficeMind AI · Nodi Tech</h1></header>
 <div id="log" aria-live="polite"></div>
 <form id="f"><input id="q" placeholder="Ask about HR, IT, expenses, NodiDesk…" autocomplete="off" autofocus><button id="send">Send</button></form>
 </div>
@@ -120,13 +128,13 @@ function lazyTraceBox(id,answer){const d=document.createElement('details');d.cla
   try{const r=await fetch('/traces/'+id);b.innerHTML=r.ok?renderTrace(await r.json(),answer):'Trace not available.'}catch(e){b.textContent='Trace not available.'}};return d}
 
 /* ---------- session, login ---------- */
-function showMe(){document.getElementById('who').textContent=me?me.email:'';
+function showMe(){document.getElementById('who').textContent=me?me.email+' · '+me.role:'';
  const L=document.getElementById('lim');
  if(me){const u=me.used_today,l=me.limit,pct=l?Math.min(100,100*u/l):0;L.className='lim'+(l&&u>=l?' full':(l&&pct>=80?' warn':''));
   L.innerHTML=l?`<b>${u} of ${l}</b> messages used today<div class="bar"><i style="width:${pct}%"></i></div><small>${u>=l?'Limit reached. Resets at midnight.':(l-u)+' left today · resets at midnight'}</small>`
    :`<b>${u}</b> messages today<div class="bar"><i style="width:0"></i></div><small>No daily limit</small>`}
 
- document.getElementById('adm').style.display=me&&me.role==='admin'?'inline':'none'}
+ document.getElementById('adm').style.display=me&&me.role==='admin'?'flex':'none'}
 function ago(ts){const m=Math.round((Date.now()/1000-ts)/60);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<24)return h+' h ago';
  const d=Math.round(h/24);return d===1?'yesterday':d+' days ago'}
 async function loadSessions(){
@@ -149,9 +157,6 @@ document.getElementById('lf').onsubmit=async e=>{e.preventDefault();
  if(!r.ok){lerr.textContent='Wrong email or password';return}
  lp.value='';lerr.textContent='';sid=null;saveSid();boot()};
 document.getElementById('out').onclick=async()=>{await fetch('/logout',{method:'POST'});sid=null;saveSid();log.innerHTML='';boot()};
-document.getElementById('pw').onclick=async()=>{const o=prompt('Current password');if(o===null)return;const n=prompt('New password (min 8 characters)');if(!n)return;
- const r=await fetch('/me/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});
- alert(r.ok?'Password changed. Please sign in again.':((await r.json()).detail||'Failed'));if(r.ok){await fetch('/logout',{method:'POST'});boot()}};
 async function restore(){
  if(!sid)return empty();
  try{const r=await fetch('/sessions/'+sid);if(!r.ok)throw 0;const h=(await r.json()).messages;

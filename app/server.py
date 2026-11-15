@@ -296,6 +296,11 @@ def index():
     return FileResponse(STATIC / "index.html")
 
 
+@app.get("/password")
+def password_page():
+    return FileResponse(STATIC / "password.html")
+
+
 @app.get("/admin")
 def admin_page():
     return FileResponse(STATIC / "admin.html")
