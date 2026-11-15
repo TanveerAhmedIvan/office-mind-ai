@@ -35,7 +35,7 @@
 - [ ] SECURITY: default password is `password` and the server is on the LAN. Change both passwords before staff use; consider forcing change at first login
 - [x] T6 Document permissions per role, enforced inside vector (Qdrant filter) and BM25 search. Seeded roles admin and user = all documents. Departments = roles (create e.g. `hr`, pick its documents)
 - [x] T7 calculate_expense_approval (app/tools.py): thresholds read from the PDF (team lead within limit; dept head above a limit; CFO also above BDT 25,000). Called by the pipeline when a question asks about approving a BDT amount; result injected as a cited fact; shown in the trace; skipped if the user may not read the expense PDF. 7 tests
-- [ ] T9 Re-enable relevance guard with a better threshold (needs labelled Bangla data)
+- [x] T9 Investigated, guard stays OFF (2026-11-15, eval/calibrate_guard.py, 50 questions): cosine in-scope min 0.374 vs out-of-scope max 0.623; best cut-off 0.525 gets 46/50 but would refuse 'How much does the Growth plan cost?' (0.485) and romanized Bangla. The LLM refusal rule (prompt rule 3) handles out-of-scope instead. Reranker-score pass not done (~20s/question on this CPU): `python -m eval.calibrate_guard --rerank`
 
 ## Stretch
 - [ ] contextual retrieval, debug panel, metadata filter, feedback log, calculate_expense_approval tool
