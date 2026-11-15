@@ -30,7 +30,7 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>0. System map</h2>
 <svg viewBox="0 0 960 330" role="img" aria-label="System map: browser to FastAPI to retrieval and Ollama">
 <rect class="box" x="10" y="130" width="130" height="70" rx="8"/><text x="75" y="160" text-anchor="middle">Browser</text><text x="75" y="178" text-anchor="middle">static/index.html</text>
-<rect class="box" x="200" y="110" width="170" height="110" rx="8"/><text x="285" y="138" text-anchor="middle">FastAPI</text><text x="285" y="156" text-anchor="middle">app/server.py</text><text x="285" y="176" text-anchor="middle">SESSIONS (RAM dict)</text><text x="285" y="194" text-anchor="middle">POST /chat (SSE)</text>
+<rect class="box" x="200" y="110" width="170" height="110" rx="8"/><text x="285" y="138" text-anchor="middle">FastAPI</text><text x="285" y="156" text-anchor="middle">app/server.py</text><text x="285" y="176" text-anchor="middle">sessions: SQLite store</text><text x="285" y="194" text-anchor="middle">POST /chat (SSE)</text>
 <rect class="box" x="430" y="110" width="170" height="110" rx="8"/><text x="515" y="138" text-anchor="middle">Chat pipeline</text><text x="515" y="156" text-anchor="middle">app/chat.py</text><text x="515" y="176" text-anchor="middle">rewrite, guard, prompt</text>
 <rect class="box" x="660" y="10" width="290" height="130" rx="8"/><text x="805" y="34" text-anchor="middle">Retrieval: app/hybrid.py</text><text x="805" y="56" text-anchor="middle">BM25 (RAM, built from data/)</text><text x="805" y="76" text-anchor="middle">Vector: app/vector.py + qdrant_data/</text><text x="805" y="96" text-anchor="middle">RRF fuse, then reranker (RAM model)</text><text x="805" y="116" text-anchor="middle">superseded penalty x0.5</text>
 <rect class="box" x="660" y="190" width="290" height="70" rx="8"/><text x="805" y="218" text-anchor="middle">Ollama: app/llm.py</text><text x="805" y="238" text-anchor="middle">localhost:11434, qwen2.5:3b</text>
@@ -60,9 +60,9 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>2. One chat message, step by step</h2>
 <div class="flow">
 <div class="step ses"><div class="n">1</div><div><h3>Receive message and load session</h3>
-<div class="kv"><b>File</b><span><code>app/server.py</code> <code>chat()</code></span>
-<b>Reads</b><span>JSON <code>{message, session_id}</code> from the browser. History from <code>SESSIONS[session_id]</code>; new uuid if none.</span>
-<b>Session</b><span>Python dict in server RAM. Last 6 turns (12 messages) kept via <code>trim()</code>. The browser holds only the id in a JS variable.</span></div></div></div>
+<div class="kv"><b>File</b><span><code>app/server.py</code> <code>chat()</code>, <code>app/sessions.py</code> <code>SessionStore.history()</code></span>
+<b>Reads</b><span>JSON <code>{message, session_id}</code> from the browser. History (last 6 turns) from SQLite <code>chat_data/sessions.db</code>; new uuid if none.</span>
+<b>Session</b><span>Stored on disk, so it survives a restart. Chats unused for 30 days are purged at startup (<code>SESSION_TTL_DAYS</code>). The browser holds only the id in a JS variable (not yet restored after a page reload, see T2).</span></div></div></div>
 <div class="arrow">↓</div>
 <div class="step grd"><div class="n">2</div><div><h3>Input guard</h3>
 <div class="kv"><b>File</b><span><code>app/chat.py</code> <code>guarded_answer()</code></span>
@@ -96,8 +96,8 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <b>Sends</b><span>SSE events <code>meta</code> (sources, chunk ids and scores, standalone question), many <code>token</code>, then <code>done</code>.</span></div></div></div>
 <div class="arrow">↓</div>
 <div class="step ses"><div class="n">9</div><div><h3>Save turn</h3>
-<div class="kv"><b>File</b><span><code>app/server.py</code> <code>gen()</code></span>
-<b>Writes</b><span>Appends user and assistant messages to <code>SESSIONS[sid]</code>, then trims to 6 turns. Nothing is written to disk.</span></div></div></div>
+<div class="kv"><b>File</b><span><code>app/server.py</code> <code>gen()</code>, <code>SessionStore.append_turn()</code></span>
+<b>Writes</b><span>Inserts the user and assistant messages into <code>chat_data/sessions.db</code> and deletes rows older than the last 6 turns for that session.</span></div></div></div>
 </div>
 
 <h2>3. Which file feeds which answer</h2>
@@ -115,15 +115,20 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>4. Implementation status</h2>
 <table><tr><th>Area</th><th>Status</th><th>Note</th></tr>
 <tr><td>Ingestion, vector, hybrid, rerank, chat, guardrails, eval</td><td class="ok">Done</td><td>M1 to M6 merged</td></tr>
-<tr><td>Chat sessions</td><td class="part">Partial</td><td>RAM only; lost on restart; never expires</td></tr>
+<tr><td>Chat sessions</td><td class="ok">Done (T1)</td><td>SQLite, 6 turns, 30-day expiry. Not yet tied to a user or restored after page reload</td></tr>
 <tr><td>Relevance guard</td><td class="part">Off</td><td>Scores overlap for romanized Bangla; the LLM refuses by itself</td></tr>
 <tr><td>Login and permissions</td><td class="no">Missing</td><td>LAN only, no auth</td></tr>
-<tr><td>Chat history storage, feedback log</td><td class="no">Missing</td><td>See <code>docs/TODO.md</code></td></tr>
+<tr><td>Chat history storage, feedback log</td><td class="no">Missing</td><td>See <code>.claude/todo/TODO.md</code></td></tr>
 <tr><td>Debug panel, metadata filter, expense tool</td><td class="no">Missing</td><td>Stretch goals</td></tr></table>
 
-<h2>5. Extra data needed from you</h2>
+<h2>5. Users (so far)</h2>
+<table><tr><th>Email</th><th>Role</th><th>Status</th></tr><tr><td>admin@nodi.tech</td><td>admin</td><td>Known; no login yet</td></tr><tr><td>ivan@nodi.tech</td><td>user</td><td>Known; no login yet</td></tr></table>
+<p class="sub">Planned: login (T5) checks the email, owns each session to a user, and lets admin view all chats. Not built.</p>
+
+<h2>6. Extra data needed from you</h2>
 <table><tr><th>Needed</th><th>Why</th></tr>
-<tr><td>List of users, with name, department, role</td><td>Login, per-user history, department filter</td></tr>
+<tr><td>Sign-in method and passwords for the 2 users (admin@nodi.tech, ivan@nodi.tech)</td><td>Login (T5). Users are known; how they authenticate is not</td></tr>
+<tr><td>Departments for those users, and any more users</td><td>Department filter (T6)</td></tr>
 <tr><td>Which departments may read which documents</td><td>Permission filter on retrieval (for example expenses only for staff)</td></tr>
 <tr><td>Office PC disk, Windows version (PowerShell query in docs)</td><td>Capacity and setup path</td></tr>
 <tr><td>Expense approval thresholds table</td><td>Needed for the <code>calculate_expense_approval</code> tool; check the PDF has them</td></tr>

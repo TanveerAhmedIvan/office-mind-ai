@@ -21,4 +21,4 @@ Rule: after any change to chunking, embeddings or prompts, rerun `python -m eval
 - [ ] T10 Run the benchmark on the office PC and record the report
 
 ## Data needed from the user
-See section 5 of `docs/ARCHITECTURE.html`: user list and roles, department-to-document map, office PC disk and Windows version, expense thresholds, real documents, session retention rule.
+See section 6 of `docs/ARCHITECTURE.html`: user list and roles, department-to-document map, office PC disk and Windows version, expense thresholds, real documents, session retention rule.
