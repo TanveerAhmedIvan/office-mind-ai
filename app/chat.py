@@ -4,6 +4,7 @@ from typing import Iterator, Protocol
 import os, re, time
 from . import config
 from .hybrid import hybrid_search
+from . import tools
 
 SYSTEM_PROMPT = """You are OfficeMind, the internal assistant for Nodi Tech Ltd.
 Rules:
@@ -44,25 +45,29 @@ def format_context(chunks: list[dict]) -> str:
         for c in chunks)
 
 
-def build_messages(history: list[dict], question: str, chunks: list[dict]) -> list[dict]:
-    user = (f"<context>\n{format_context(chunks)}\n</context>\n\nQuestion: {question}\n\n"
+def build_messages(history: list[dict], question: str, chunks: list[dict], extra: str = "") -> list[dict]:
+    user = (f"<context>\n{format_context(chunks)}{extra}\n</context>\n\nQuestion: {question}\n\n"
             "Answer from the context only and cite [file].")
     return [{"role": "system", "content": SYSTEM_PROMPT}, *trim(history), {"role": "user", "content": user}]
 
 
-def answer(history: list[dict], question: str, llm: LLM, search=hybrid_search) -> tuple[dict, Iterator[str]]:
+def answer(history: list[dict], question: str, llm: LLM, search=hybrid_search,
+           use_tools: bool = True) -> tuple[dict, Iterator[str]]:
     """Returns (meta, token_stream). Caller appends the final turn to history."""
     t0 = time.perf_counter()
     standalone = rewrite(history, question, llm)
     t1 = time.perf_counter()
     chunks = search(standalone, 5)
     t2 = time.perf_counter()
-    msgs = build_messages(history, question, chunks)
+    tool = tools.tool_context(standalone) if use_tools else None
+    extra = f'\n<doc source="{tools.SOURCE}" superseded="false">\n{tool[1]}\n</doc>' if tool else ""
+    msgs = build_messages(history, question, chunks, extra)
     meta = {"standalone": standalone,
-            "sources": sorted({c["source"] for c in chunks}),
+            "sources": sorted({c["source"] for c in chunks} | ({tools.SOURCE} if tool else set())),
             "chunks": [{"id": c["id"], "score": round(c["score"], 3)} for c in chunks],
             "rewrite": {"used": bool(history), "ms": round((t1 - t0) * 1000)},
             "retrieval_ms": round((t2 - t1) * 1000),
+            "tool": {"name": "calculate_expense_approval", **tool[0]} if tool else None,
             "prompt": {"history_msgs": len(trim(history)), "system_chars": len(SYSTEM_PROMPT),
                        "context_chars": len(format_context(chunks)), "chunks": len(chunks)}}
     return meta, llm.chat(msgs, stream=True)
@@ -76,11 +81,11 @@ REFUSE_UNKNOWN = ("I don't know based on the company documents. I only answer qu
 MIN_RELEVANCE = float(os.getenv("MIN_RELEVANCE", "0"))  # OFF by default: scores overlap (romanized Bangla in-scope 0.011 vs out-of-scope up to 0.019); the LLM refuses by itself
 
 
-def guarded_answer(history, question, llm, search=hybrid_search):
+def guarded_answer(history, question, llm, search=hybrid_search, use_tools=True):
     """answer() plus input/output guards. Same return shape."""
     if LEAK.search(question):
         return {"standalone": question, "sources": [], "chunks": [], "guard": "leak"}, iter([REFUSE_LEAK])
-    meta, toks = answer(history, question, llm, search)
+    meta, toks = answer(history, question, llm, search, use_tools)
     if MIN_RELEVANCE and meta["chunks"] and max(c["score"] for c in meta["chunks"]) < MIN_RELEVANCE:
         return {**meta, "sources": [], "guard": "irrelevant"}, iter([REFUSE_UNKNOWN])
     return meta, toks

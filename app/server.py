@@ -9,6 +9,7 @@ from . import config
 from .auth import AuthStore, TOKEN_TTL, doc_names
 from .chat import guarded_answer as answer
 from .hybrid import hybrid_search
+from . import tools
 from .llm import OllamaLLM
 from .sessions import SessionStore
 
@@ -146,7 +147,8 @@ def chat(req: Req, u: dict = Depends(current_user)):
 
     def gen():
         t0 = time.perf_counter()
-        meta, tokens = answer(history, req.message, llm, search)
+        meta, tokens = answer(history, req.message, llm, search,
+                              use_tools=allowed is None or tools.SOURCE in allowed)
         t_llm = time.perf_counter()
         yield sse("meta", {**meta, "session_id": sid})
         parts, t_first = [], None
@@ -162,7 +164,7 @@ def chat(req: Req, u: dict = Depends(current_user)):
         trace = {"question": req.message, "standalone": meta["standalone"], "guard": meta.get("guard"),
                  "user": u["email"], "role": u["role"], "allowed": None if allowed is None else sorted(allowed),
                  "history_msgs": len(history), "model": getattr(llm, "model", "?"),
-                 "rewrite": meta.get("rewrite"), "retrieval": found.get("retrieval"), "prompt": meta.get("prompt"),
+                 "rewrite": meta.get("rewrite"), "tool": meta.get("tool"), "retrieval": found.get("retrieval"), "prompt": meta.get("prompt"),
                  "answer_chars": len(full), "limit": auth.limit_for(u["email"]), "used_today": auth.used_today(u["email"]),
                  "ms": {"rewrite": (meta.get("rewrite") or {}).get("ms", 0), "retrieval": meta.get("retrieval_ms", 0),
                         "prepare": ms(t_llm, t0), "first_token": ms(t_first or t_end, t_llm),

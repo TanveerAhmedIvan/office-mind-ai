@@ -86,7 +86,7 @@ function renderTrace(t,answer){
   `<p>Cross-encoder rescoring. Outdated documents get ×${R.penalty}.</p><table class="h"><tr><th>chunk</th><th>score</th></tr>${R.final.map(c=>`<tr><td><details><summary>${esc(c.id)} · ${esc(c.section)}${c.superseded?' <span class="tag">SUPERSEDED ×'+R.penalty+'</span>':''}</summary><div class="sn">${esc(c.snippet)}…</div></details></td><td>${c.score}<br><span style="color:var(--mut)">cos ${c.vscore}</span></td></tr>`).join('')}</table>`,skip?null:rm.rerank,skip));
  const P=t.prompt||{};
  S.push(step(8,'Build prompt','app/chat.py build_messages() · SYSTEM_PROMPT',blocked?SK:
-  `<p>System rules (${P.system_chars} chars) + ${P.history_msgs} chat messages + <b>${P.chunks}</b> fenced chunks (${P.context_chars} chars) marked as untrusted data.</p>`,null,blocked));
+  `<p>System rules (${P.system_chars} chars) + ${P.history_msgs} chat messages + <b>${P.chunks}</b> fenced chunks (${P.context_chars} chars) marked as untrusted data.</p>`+(t.tool?`<p><b>Tool called:</b> calculate_expense_approval (app/tools.py) · BDT ${t.tool.amount} → ${esc(t.tool.approvers.join(' + '))}</p>`:''),null,blocked));
  S.push(step(9,'Generate answer','app/llm.py OllamaLLM.chat() · '+esc(t.model)+' · LLM call 2',blocked?SK:
   `<p>First token after ${ms.first_token} ms, finished in ${ms.llm} ms · ${t.answer_chars} characters${used.length?` · cited ${[...cited].filter(f=>used.includes(f)).length} of ${used.length} retrieved files`:''}.</p>`,blocked?null:ms.llm,blocked));
  return h+S.join('<div class="ar">▼</div>');

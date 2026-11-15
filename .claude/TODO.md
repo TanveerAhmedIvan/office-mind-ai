@@ -34,7 +34,7 @@
 - [x] Usage + limits: default 50 messages/user/day (DEFAULT_DAILY_LIMIT), per-user override (0 = unlimited), HTTP 429 when over; usage per user: today/7d/total, approx tokens in/out, last used
 - [ ] SECURITY: default password is `password` and the server is on the LAN. Change both passwords before staff use; consider forcing change at first login
 - [x] T6 Document permissions per role, enforced inside vector (Qdrant filter) and BM25 search. Seeded roles admin and user = all documents. Departments = roles (create e.g. `hr`, pick its documents)
-- [ ] T7 calculate_expense_approval(amount) tool (needs thresholds from the PDF)
+- [x] T7 calculate_expense_approval (app/tools.py): thresholds read from the PDF (team lead within limit; dept head above a limit; CFO also above BDT 25,000). Called by the pipeline when a question asks about approving a BDT amount; result injected as a cited fact; shown in the trace; skipped if the user may not read the expense PDF. 7 tests
 - [ ] T9 Re-enable relevance guard with a better threshold (needs labelled Bangla data)
 
 ## Stretch

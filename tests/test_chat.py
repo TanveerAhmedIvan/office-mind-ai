@@ -45,3 +45,20 @@ def test_answer_returns_sources_and_stream():
     meta, toks = answer([], "Annual leave?", llm, search=lambda q, k: CH)
     assert meta["sources"] == ["employee_handbook_v3.md", "vendor_notice_printer.md"]
     assert "".join(toks).startswith("18 days")
+
+
+def test_expense_tool_result_reaches_prompt_and_sources():
+    llm = FakeLLM()
+    meta, _ = answer([], "I claimed BDT 30,000, who approves?", llm, lambda q, k: CH)
+    prompt = llm.calls[-1][-1]["content"]
+    assert "Department head; CFO" in prompt and 'source="expense_reimbursement_policy.pdf"' in prompt
+    assert meta["tool"]["approvers"] == ["Department head", "CFO"]
+    assert "expense_reimbursement_policy.pdf" in meta["sources"]
+
+
+def test_expense_tool_off_when_not_permitted_or_not_a_claim():
+    llm = FakeLLM()
+    meta, _ = answer([], "I claimed BDT 30,000, who approves?", llm, lambda q, k: CH, use_tools=False)
+    assert meta["tool"] is None and "CFO" not in llm.calls[-1][-1]["content"]
+    meta, _ = answer([], "What are the office hours?", llm, lambda q, k: CH)
+    assert meta["tool"] is None
