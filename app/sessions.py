@@ -16,6 +16,9 @@ class SessionStore:
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, sid TEXT NOT NULL, "
                         "role TEXT NOT NULL, content TEXT NOT NULL, ts REAL NOT NULL)")
         self.db.execute("CREATE INDEX IF NOT EXISTS idx_sid ON messages(sid, id)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS feedback ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, sid TEXT, rating INTEGER NOT NULL, "
+                        "question TEXT, answer TEXT, ts REAL NOT NULL)")
         self.db.commit()
 
     def history(self, sid: str, turns: int = config.MAX_TURNS) -> list[dict]:
@@ -30,6 +33,12 @@ class SessionStore:
         self.db.execute("DELETE FROM messages WHERE sid=? AND id NOT IN "
                         "(SELECT id FROM messages WHERE sid=? ORDER BY id DESC LIMIT ?)",
                         (sid, sid, 2 * config.MAX_TURNS))
+        self.db.commit()
+
+    def add_feedback(self, sid: str | None, rating: int, question: str = "", answer: str = "") -> None:
+        """Feedback is kept after the chat expires (it holds the Q/A it rates)."""
+        self.db.execute("INSERT INTO feedback(sid, rating, question, answer, ts) VALUES (?,?,?,?,?)",
+                        (sid, 1 if rating > 0 else -1, question, answer, time.time()))
         self.db.commit()
 
     def purge_expired(self) -> int:

@@ -27,7 +27,7 @@
 - [x] T2 GET /sessions/{id}; UI restores session id from localStorage (test added)
 - [x] T3 Debug panel in UI (Debug button: standalone question + chunk scores)
 - [x] UI rewrite: dark mode, mobile, New chat, suggestion chips, source chips, error message, send disabled while streaming
-- [ ] T4 Thumbs up/down feedback log (SQLite)
+- [x] T4 Thumbs up/down feedback: POST /feedback -> SQLite `feedback` table (kept after chat expiry); UI buttons; 2 tests
 - [ ] T5 Login + per-user sessions. Users: admin@nodi.tech (admin), ivan@nodi.tech (user). Sign-in method TBD
 - [ ] T6 Department metadata filter (needs document -> department map)
 - [ ] T7 calculate_expense_approval(amount) tool (needs thresholds from the PDF)
@@ -46,7 +46,8 @@
 - [ ] FIX: WSL has only ~6GB RAM and no C:\Users\<you>\.wslconfig -> WSL restarts under load. Set memory=11GB, processors=4, swap=4GB, then `wsl --shutdown`
 - [x] .wslconfig applied (10GB / 4 threads). Port 8000 is taken by php8.3 (MOCA app) -> OfficeMind uses 8001 (run_wsl.sh default); portproxy/firewall for 8001 added by user in PowerShell
 - [x] Smoke test on 8010: annual leave answer = 18 days, cites employee_handbook_v3.md; first request took 2m16s (cold model load)
-- [ ] Cold start fix: warm the model at server start / OLLAMA_KEEP_ALIVE=1h; measure warm latency
+- [x] Cold start fix: model preloaded in a background thread at server start (keep_alive 1h)
+- [ ] Measure warm latency per answer on this PC (needs server running)
 - [ ] Run jobs ONE AT A TIME (server smoke test, then eval); eval was killed at 6/40 (Q05 medical certificate wrong so far)
 - [ ] Record `eval.bench qwen2.5:3b 4` output and CPU latency per answer
 - [ ] Decide model (3B vs 4B candidates) from CPU latency + Bangla accuracy; consider cutting rerank pool

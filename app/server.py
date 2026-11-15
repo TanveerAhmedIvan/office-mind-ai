@@ -1,6 +1,6 @@
 """FastAPI: POST /chat streams Server-Sent Events; GET / serves the UI."""
 from __future__ import annotations
-import json, uuid
+import json, threading, uuid
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
@@ -14,6 +14,28 @@ app = FastAPI(title="OfficeMind AI")
 store = SessionStore()
 store.purge_expired()
 llm = OllamaLLM()
+
+
+class Feedback(BaseModel):
+    session_id: str | None = None
+    rating: int  # 1 = thumbs up, -1 = thumbs down
+    question: str = ""
+    answer: str = ""
+
+
+def warm_llm() -> None:
+    """Load the model into RAM at startup so the first user does not wait minutes (CPU cold start)."""
+    try:
+        import httpx
+        httpx.post(f"{config.OLLAMA_URL}/api/generate", timeout=600,
+                   json={"model": config.LLM_MODEL, "prompt": "", "keep_alive": "1h"})
+    except Exception:
+        pass
+
+
+@app.on_event("startup")
+def _startup():
+    threading.Thread(target=warm_llm, daemon=True).start()
 
 
 class Req(BaseModel):
@@ -40,6 +62,12 @@ def chat(req: Req):
         store.append_turn(sid, req.message, "".join(parts))
         yield sse("done", {})
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.post("/feedback")
+def feedback(fb: Feedback):
+    store.add_feedback(fb.session_id, fb.rating, fb.question, fb.answer)
+    return {"ok": True}
 
 
 @app.get("/sessions/{sid}")

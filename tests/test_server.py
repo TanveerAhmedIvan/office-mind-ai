@@ -24,3 +24,11 @@ def test_session_endpoint_returns_history(monkeypatch):
     r = TestClient(server.app).get("/sessions/abc")
     assert r.json()["messages"] == [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}]
     assert TestClient(server.app).get("/sessions/none").json()["messages"] == []
+
+
+def test_feedback_endpoint(monkeypatch):
+    s = SessionStore(":memory:")
+    monkeypatch.setattr(server, "store", s)
+    r = TestClient(server.app).post("/feedback", json={"session_id": "x", "rating": 1, "question": "q", "answer": "a"})
+    assert r.json() == {"ok": True}
+    assert s.db.execute("SELECT rating FROM feedback").fetchall() == [(1,)]

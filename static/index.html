@@ -17,6 +17,7 @@ header button[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}
 .u{background:var(--user);margin-left:12%}.b{background:var(--card);margin-right:12%}.b.err{border:1px solid var(--err);color:var(--err)}
 .src{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
 .src span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:0 8px;color:var(--mut)}
+.fb{margin-top:6px}.fb button{background:none;border:1px solid var(--line);border-radius:8px;cursor:pointer;margin-right:4px;font-size:14px}.fb button:disabled{opacity:.5}
 .dbg{display:none;margin-top:8px;font-size:12px;color:var(--mut);font-family:ui-monospace,monospace;white-space:pre-wrap}
 body.debug .dbg{display:block}
 form{display:flex;gap:8px;padding:10px 0 14px}
@@ -59,6 +60,10 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
     if(ev==='token'){txt+=data;b.textContent=txt;log.scrollTop=log.scrollHeight}}}
   if(!txt)b.textContent='(no answer)';
   if(meta&&meta.sources.length){const s=document.createElement('div');s.className='src';meta.sources.forEach(x=>{const t=document.createElement('span');t.textContent=x;s.append(t)});b.append(s)}
+  if(txt&&meta){const fb=document.createElement('div');fb.className='fb';
+   [['👍',1],['👎',-1]].forEach(([e,r])=>{const x=document.createElement('button');x.textContent=e;x.setAttribute('aria-label',r>0?'Helpful':'Not helpful');
+    x.onclick=async()=>{fb.querySelectorAll('button').forEach(y=>y.disabled=true);
+     try{await fetch('/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sid,rating:r,question:m,answer:txt})})}catch(e){}};fb.append(x)});b.append(fb)}
   if(meta){const d=document.createElement('div');d.className='dbg';
    d.textContent='standalone: '+meta.standalone+'\n'+meta.chunks.map(c=>c.score.toFixed(3)+'  '+c.id).join('\n');b.append(d)}
  }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+'). Check that the server and Ollama are running, then try again.'}

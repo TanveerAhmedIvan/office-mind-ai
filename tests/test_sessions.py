@@ -26,3 +26,11 @@ def test_purge_expired():
     s.append_turn("new", "q", "a")
     assert s.purge_expired() == 2
     assert s.history("old") == [] and len(s.history("new")) == 2
+
+
+def test_feedback_is_stored_and_survives_purge():
+    s = SessionStore(":memory:", ttl_days=1)
+    s.add_feedback("a", -5, "q", "ans")
+    s.db.execute("UPDATE feedback SET ts=?", (time.time() - 9 * 86400,))
+    s.purge_expired()
+    assert s.db.execute("SELECT sid, rating, question, answer FROM feedback").fetchall() == [("a", -1, "q", "ans")]
