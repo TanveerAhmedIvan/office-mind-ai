@@ -24,8 +24,9 @@
 ## Post-M6 work (branch feat/architecture-and-session-persistence)
 - [x] docs/ARCHITECTURE.html: visual of indexing + 9-step chat flow, files, sessions, status, missing data
 - [x] T1 Persistent chat sessions (SQLite chat_data/sessions.db, 6 turns, 30-day expiry), 4 tests
-- [ ] T2 GET /sessions/{id}; UI restores session id from localStorage
-- [ ] T3 Debug panel (chunks + scores; already in the `meta` SSE event)
+- [x] T2 GET /sessions/{id}; UI restores session id from localStorage (test added)
+- [x] T3 Debug panel in UI (Debug button: standalone question + chunk scores)
+- [x] UI rewrite: dark mode, mobile, New chat, suggestion chips, source chips, error message, send disabled while streaming
 - [ ] T4 Thumbs up/down feedback log (SQLite)
 - [ ] T5 Login + per-user sessions. Users: admin@nodi.tech (admin), ivan@nodi.tech (user). Sign-in method TBD
 - [ ] T6 Department metadata filter (needs document -> department map)
@@ -43,6 +44,9 @@
 - [x] docs/OFFICE_PC_SETUP.md, scripts/setup_wsl.sh, run_wsl.sh, setup_office_pc.ps1 (untested), eval/bench.py
 - [x] Setup done here: venv, index (qdrant_data), Ollama + qwen2.5:3b pulled (2026-11-15), 4 session/server tests pass
 - [ ] FIX: WSL has only ~6GB RAM and no C:\Users\<you>\.wslconfig -> WSL restarts under load. Set memory=11GB, processors=4, swap=4GB, then `wsl --shutdown`
+- [x] .wslconfig applied (10GB / 4 threads). Port 8000 is taken by php8.3 (MOCA app) -> OfficeMind uses 8001 (run_wsl.sh default); portproxy/firewall for 8001 added by user in PowerShell
+- [x] Smoke test on 8010: annual leave answer = 18 days, cites employee_handbook_v3.md; first request took 2m16s (cold model load)
+- [ ] Cold start fix: warm the model at server start / OLLAMA_KEEP_ALIVE=1h; measure warm latency
 - [ ] Run jobs ONE AT A TIME (server smoke test, then eval); eval was killed at 6/40 (Q05 medical certificate wrong so far)
 - [ ] Record `eval.bench qwen2.5:3b 4` output and CPU latency per answer
 - [ ] Decide model (3B vs 4B candidates) from CPU latency + Bangla accuracy; consider cutting rerank pool

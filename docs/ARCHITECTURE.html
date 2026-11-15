@@ -30,7 +30,7 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>0. System map</h2>
 <svg viewBox="0 0 960 330" role="img" aria-label="System map: browser to FastAPI to retrieval and Ollama">
 <rect class="box" x="10" y="130" width="130" height="70" rx="8"/><text x="75" y="160" text-anchor="middle">Browser</text><text x="75" y="178" text-anchor="middle">static/index.html</text>
-<rect class="box" x="200" y="110" width="170" height="110" rx="8"/><text x="285" y="138" text-anchor="middle">FastAPI</text><text x="285" y="156" text-anchor="middle">app/server.py</text><text x="285" y="176" text-anchor="middle">sessions: SQLite store</text><text x="285" y="194" text-anchor="middle">POST /chat (SSE)</text>
+<rect class="box" x="200" y="110" width="170" height="110" rx="8"/><text x="285" y="138" text-anchor="middle">FastAPI</text><text x="285" y="156" text-anchor="middle">app/server.py</text><text x="285" y="176" text-anchor="middle">sessions: SQLite store</text><text x="285" y="194" text-anchor="middle">POST /chat (SSE), port 8001</text>
 <rect class="box" x="430" y="110" width="170" height="110" rx="8"/><text x="515" y="138" text-anchor="middle">Chat pipeline</text><text x="515" y="156" text-anchor="middle">app/chat.py</text><text x="515" y="176" text-anchor="middle">rewrite, guard, prompt</text>
 <rect class="box" x="660" y="10" width="290" height="130" rx="8"/><text x="805" y="34" text-anchor="middle">Retrieval: app/hybrid.py</text><text x="805" y="56" text-anchor="middle">BM25 (RAM, built from data/)</text><text x="805" y="76" text-anchor="middle">Vector: app/vector.py + qdrant_data/</text><text x="805" y="96" text-anchor="middle">RRF fuse, then reranker (RAM model)</text><text x="805" y="116" text-anchor="middle">superseded penalty x0.5</text>
 <rect class="box" x="660" y="190" width="290" height="70" rx="8"/><text x="805" y="218" text-anchor="middle">Ollama: app/llm.py</text><text x="805" y="238" text-anchor="middle">localhost:11434, qwen2.5:3b</text>
@@ -62,7 +62,7 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <div class="step ses"><div class="n">1</div><div><h3>Receive message and load session</h3>
 <div class="kv"><b>File</b><span><code>app/server.py</code> <code>chat()</code>, <code>app/sessions.py</code> <code>SessionStore.history()</code></span>
 <b>Reads</b><span>JSON <code>{message, session_id}</code> from the browser. History (last 6 turns) from SQLite <code>chat_data/sessions.db</code>; new uuid if none.</span>
-<b>Session</b><span>Stored on disk, so it survives a restart. Chats unused for 30 days are purged at startup (<code>SESSION_TTL_DAYS</code>). The browser holds only the id in a JS variable (not yet restored after a page reload, see T2).</span></div></div></div>
+<b>Session</b><span>Stored on disk, so it survives a restart. Chats unused for 30 days are purged at startup (<code>SESSION_TTL_DAYS</code>). The browser holds only the id in a JS variable (restored after a page reload via <code>localStorage</code> and <code>GET /sessions/{id}</code>).</span></div></div></div>
 <div class="arrow">↓</div>
 <div class="step grd"><div class="n">2</div><div><h3>Input guard</h3>
 <div class="kv"><b>File</b><span><code>app/chat.py</code> <code>guarded_answer()</code></span>
@@ -115,7 +115,7 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <h2>4. Implementation status</h2>
 <table><tr><th>Area</th><th>Status</th><th>Note</th></tr>
 <tr><td>Ingestion, vector, hybrid, rerank, chat, guardrails, eval</td><td class="ok">Done</td><td>M1 to M6 merged</td></tr>
-<tr><td>Chat sessions</td><td class="ok">Done (T1)</td><td>SQLite, 6 turns, 30-day expiry. Not yet tied to a user or restored after page reload</td></tr>
+<tr><td>Chat sessions</td><td class="ok">Done (T1)</td><td>SQLite, 6 turns, 30-day expiry. Not yet tied to a user</td></tr>
 <tr><td>Relevance guard</td><td class="part">Off</td><td>Scores overlap for romanized Bangla; the LLM refuses by itself</td></tr>
 <tr><td>Login and permissions</td><td class="no">Missing</td><td>LAN only, no auth</td></tr>
 <tr><td>Chat history storage, feedback log</td><td class="no">Missing</td><td>See <code>.claude/TODO.md</code></td></tr>

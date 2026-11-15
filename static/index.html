@@ -1,22 +1,67 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OfficeMind AI</title>
-<style>body{font:16px system-ui;max-width:760px;margin:0 auto;padding:16px;display:flex;flex-direction:column;height:100vh;box-sizing:border-box}
-#log{flex:1;overflow:auto}.m{margin:8px 0;padding:10px 12px;border-radius:10px;white-space:pre-wrap}
-.u{background:#e8f0fe;margin-left:15%}.b{background:#f1f3f4;margin-right:15%}.s{font-size:12px;color:#555;margin-top:6px}
-form{display:flex;gap:8px}input{flex:1;padding:10px;font-size:16px}button{padding:10px 16px}</style></head><body>
-<h2>OfficeMind AI — Nodi Tech</h2><div id="log"></div>
-<form id="f"><input id="q" placeholder="Ask about HR, IT, expenses, NodiDesk…" autocomplete="off" autofocus><button>Send</button></form>
+<style>
+:root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f1f3f4;--user:#e0e9ff;--line:#d5dbe6;--acc:#2557d6;--err:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--user:#233463;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:800px;margin:0 auto;padding:0 16px}
+header{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;flex:1}
+header button{background:none;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
+header button[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}
+#log{flex:1;overflow:auto;padding:8px 0}
+.empty{color:var(--mut);text-align:center;margin-top:20vh}
+.empty button{margin:4px;background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px}
+.m{margin:8px 0;padding:10px 12px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word}
+.u{background:var(--user);margin-left:12%}.b{background:var(--card);margin-right:12%}.b.err{border:1px solid var(--err);color:var(--err)}
+.src{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
+.src span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:0 8px;color:var(--mut)}
+.dbg{display:none;margin-top:8px;font-size:12px;color:var(--mut);font-family:ui-monospace,monospace;white-space:pre-wrap}
+body.debug .dbg{display:block}
+form{display:flex;gap:8px;padding:10px 0 14px}
+input{flex:1;padding:10px 12px;font-size:16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+form button{padding:10px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px;cursor:pointer}
+form button:disabled{opacity:.5;cursor:wait}
+</style></head><body>
+<header><h1>OfficeMind AI · Nodi Tech</h1>
+<button id="dbg" aria-pressed="false" title="Show retrieved chunks and scores">Debug</button>
+<button id="new">New chat</button></header>
+<div id="log" aria-live="polite"></div>
+<form id="f"><input id="q" placeholder="Ask about HR, IT, expenses, NodiDesk…" autocomplete="off" autofocus><button id="send">Send</button></form>
 <script>
-let sid=null;const log=document.getElementById('log');
-function add(c,t){const d=document.createElement('div');d.className='m '+c;d.textContent=t;log.append(d);log.scrollTop=1e9;return d}
-f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m)return;q.value='';add('u',m);
-const b=add('b','…');let txt='';const s=document.createElement('div');s.className='s';
-const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,session_id:sid})});
-const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
-while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
-let i;while((i=buf.indexOf('\n\n'))>=0){const blk=buf.slice(0,i);buf=buf.slice(i+2);
-const ev=blk.match(/event: (\w+)/)[1],data=JSON.parse(blk.match(/data: (.*)/)[1]);
-if(ev==='meta'){sid=data.session_id;s.textContent='Sources: '+data.sources.join(', ');}
-if(ev==='token'){txt+=data;b.textContent=txt;log.scrollTop=1e9}}}
-b.append(s)};
+const log=document.getElementById('log'),q=document.getElementById('q'),send=document.getElementById('send');
+const SUGGEST=['What are the office hours?','How many annual leave days do I get?','What is the NodiDesk Growth plan price?','Can I work from home?'];
+let sid=null;
+try{sid=localStorage.getItem('sid')}catch(e){}
+const saveSid=()=>{try{sid?localStorage.setItem('sid',sid):localStorage.removeItem('sid')}catch(e){}};
+function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;log.append(d);log.scrollTop=log.scrollHeight;return d}
+function empty(){log.innerHTML='';const e=document.createElement('div');e.className='empty';e.innerHTML='<p>Ask a question about Nodi Tech documents.</p>';
+ SUGGEST.forEach(s=>{const b=document.createElement('button');b.type='button';b.textContent=s;b.onclick=()=>{q.value=s;f.requestSubmit()};e.append(b)});log.append(e)}
+async function restore(){
+ if(!sid)return empty();
+ try{const r=await fetch('/sessions/'+sid);if(!r.ok)throw 0;const h=(await r.json()).messages;
+  if(!h.length)return empty();log.innerHTML='';h.forEach(m=>add(m.role==='user'?'u':'b',m.content))}catch(e){sid=null;saveSid();empty()}}
+document.getElementById('new').onclick=()=>{sid=null;saveSid();empty();q.focus()};
+const dbgBtn=document.getElementById('dbg');
+dbgBtn.onclick=()=>{const on=document.body.classList.toggle('debug');dbgBtn.setAttribute('aria-pressed',on)};
+f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disabled)return;
+ document.querySelector('.empty')?.remove();q.value='';send.disabled=true;add('u',m);
+ const b=add('b','…');let txt='',meta=null;
+ try{
+  const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,session_id:sid})});
+  if(!r.ok)throw new Error('Server error '+r.status);
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+  while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+   let i;while((i=buf.indexOf('\n\n'))>=0){const blk=buf.slice(0,i);buf=buf.slice(i+2);
+    const ev=blk.match(/event: (\w+)/)[1],data=JSON.parse(blk.match(/data: (.*)/)[1]);
+    if(ev==='meta'){meta=data;sid=data.session_id;saveSid()}
+    if(ev==='token'){txt+=data;b.textContent=txt;log.scrollTop=log.scrollHeight}}}
+  if(!txt)b.textContent='(no answer)';
+  if(meta&&meta.sources.length){const s=document.createElement('div');s.className='src';meta.sources.forEach(x=>{const t=document.createElement('span');t.textContent=x;s.append(t)});b.append(s)}
+  if(meta){const d=document.createElement('div');d.className='dbg';
+   d.textContent='standalone: '+meta.standalone+'\n'+meta.chunks.map(c=>c.score.toFixed(3)+'  '+c.id).join('\n');b.append(d)}
+ }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+'). Check that the server and Ollama are running, then try again.'}
+ send.disabled=false;q.focus()};
+restore();
 </script></body></html>

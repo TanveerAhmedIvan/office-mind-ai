@@ -42,6 +42,11 @@ def chat(req: Req):
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
+@app.get("/sessions/{sid}")
+def get_session(sid: str):
+    return {"session_id": sid, "messages": store.history(sid)}
+
+
 @app.get("/")
 def index():
     return FileResponse(Path(__file__).parent.parent / "static" / "index.html")

@@ -15,3 +15,12 @@ def test_chat_endpoint_streams_and_remembers(monkeypatch):
     assert "event: meta" in r.text and "event: token" in r.text and "event: done" in r.text
     sid = r.text.split('"session_id": "')[1].split('"')[0]
     assert len(server.store.history(sid)) == 2
+
+
+def test_session_endpoint_returns_history(monkeypatch):
+    s = SessionStore(":memory:")
+    s.append_turn("abc", "hi", "hello")
+    monkeypatch.setattr(server, "store", s)
+    r = TestClient(server.app).get("/sessions/abc")
+    assert r.json()["messages"] == [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}]
+    assert TestClient(server.app).get("/sessions/none").json()["messages"] == []
