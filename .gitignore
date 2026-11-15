@@ -6,3 +6,4 @@ qdrant_data/
 .pytest_cache/
 eval/reports/
 chat_data/
+run/
