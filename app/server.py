@@ -1,6 +1,6 @@
 """FastAPI: login, POST /chat (SSE, permission-filtered retrieval), admin API for users/roles/documents."""
 from __future__ import annotations
-import json, threading, uuid
+import json, threading, time, uuid
 from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
@@ -139,19 +139,36 @@ def chat(req: Req, u: dict = Depends(current_user)):
     history = store.history(sid)
     allowed = auth.allowed_docs(u["role"])
 
+    found: dict = {}  # filled by hybrid_search with every intermediate result (trace view)
+
     def search(q, k):
-        return hybrid_search(q, k, allowed=allowed)
+        return hybrid_search(q, k, allowed=allowed, trace=found)
 
     def gen():
+        t0 = time.perf_counter()
         meta, tokens = answer(history, req.message, llm, search)
+        t_llm = time.perf_counter()
         yield sse("meta", {**meta, "session_id": sid})
-        parts = []
+        parts, t_first = [], None
         for t in tokens:
+            t_first = t_first or time.perf_counter()
             parts.append(t)
             yield sse("token", t)
+        t_end = time.perf_counter()
         full = "".join(parts)
-        store.append_turn(sid, req.message, full)
+        msg_id = store.append_turn(sid, req.message, full)
         auth.finish_usage(usage_id, len(full))
+        ms = lambda a, b: round((a - b) * 1000)
+        trace = {"question": req.message, "standalone": meta["standalone"], "guard": meta.get("guard"),
+                 "user": u["email"], "role": u["role"], "allowed": None if allowed is None else sorted(allowed),
+                 "history_msgs": len(history), "model": getattr(llm, "model", "?"),
+                 "rewrite": meta.get("rewrite"), "retrieval": found.get("retrieval"), "prompt": meta.get("prompt"),
+                 "answer_chars": len(full), "limit": auth.limit_for(u["email"]), "used_today": auth.used_today(u["email"]),
+                 "ms": {"rewrite": (meta.get("rewrite") or {}).get("ms", 0), "retrieval": meta.get("retrieval_ms", 0),
+                        "prepare": ms(t_llm, t0), "first_token": ms(t_first or t_end, t_llm),
+                        "llm": ms(t_end, t_llm), "total": ms(t_end, t0)}}
+        store.save_trace(sid, msg_id, trace)
+        yield sse("trace", {"id": msg_id, **trace})
         yield sse("done", {})
     return StreamingResponse(gen(), media_type="text/event-stream")
 
@@ -167,7 +184,19 @@ def get_session(sid: str, u: dict = Depends(current_user)):
     owner = auth.session_owner(sid)
     if owner and owner != u["email"] and u["role"] != "admin":
         raise HTTPException(403, "this chat belongs to another user")
-    return {"session_id": sid, "messages": store.history(sid)}
+    return {"session_id": sid, "messages": store.history_with_trace(sid)}
+
+
+@app.get("/traces/{msg_id}")
+def get_trace(msg_id: int, u: dict = Depends(current_user)):
+    row = store.get_trace(msg_id)
+    if not row:
+        raise HTTPException(404, "no trace")
+    sid, trace = row
+    owner = auth.session_owner(sid)
+    if owner and owner != u["email"] and u["role"] != "admin":
+        raise HTTPException(403, "this chat belongs to another user")
+    return {"id": msg_id, **trace}
 
 
 # ---- admin ----

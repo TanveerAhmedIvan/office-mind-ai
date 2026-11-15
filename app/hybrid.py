@@ -49,9 +49,13 @@ def _reranker():
 
 
 def hybrid_search(query: str, k: int = 5, rerank: bool = True, pool: int = 20,
-                  client=None, allowed: set[str] | None = None) -> list[dict]:
+                  client=None, allowed: set[str] | None = None, trace: dict | None = None) -> list[dict]:
+    """trace: optional dict that is filled with every intermediate result (for the UI trace view)."""
+    t0 = time.perf_counter()
     vec = vector.search(query, pool, client, allowed)
+    t1 = time.perf_counter()
     lex = bm25_search(query, pool, allowed)
+    t2 = time.perf_counter()
     for r in vec:
         r["vscore"] = r["score"]  # keep raw cosine similarity; "score" is overwritten by rerank below
     by_id = {r["id"]: r for r in vec}
@@ -61,6 +65,7 @@ def hybrid_search(query: str, k: int = 5, rerank: bool = True, pool: int = 20,
     cands = sorted(by_id.values(), key=lambda r: -fused[r["id"]])[: max(k * 3, 16)]
     for r in cands:
         r["rrf"] = fused[r["id"]]
+    t3 = time.perf_counter()
     if rerank:
         scores = _reranker().predict([(query, r["text"]) for r in cands])
         for r, s in zip(cands, scores):
@@ -68,7 +73,20 @@ def hybrid_search(query: str, k: int = 5, rerank: bool = True, pool: int = 20,
     else:
         for r in cands:
             r["score"] = r["rrf"] * (SUPERSEDED_PENALTY if r["superseded"] else 1.0)
-    return sorted(cands, key=lambda r: -r["score"])[:k]
+    t4 = time.perf_counter()
+    final = sorted(cands, key=lambda r: -r["score"])[:k]
+    if trace is not None:
+        trace["retrieval"] = {
+            "pool": pool, "reranked": rerank, "penalty": SUPERSEDED_PENALTY,
+            "vector": [{"id": r["id"], "score": round(r["vscore"], 3)} for r in vec[:10]],
+            "bm25": [{"id": c.id, "score": round(sc, 2)} for c, sc in lex[:10]],
+            "fused": [{"id": r["id"], "rrf": round(r["rrf"], 4)} for r in cands],
+            "final": [{"id": r["id"], "source": r["source"], "section": r["section"], "score": round(r["score"], 3),
+                       "vscore": round(r["vscore"], 3), "rrf": round(r["rrf"], 4), "superseded": r["superseded"],
+                       "snippet": r["text"][:400]} for r in final],
+            "ms": {"vector": round((t1 - t0) * 1000), "bm25": round((t2 - t1) * 1000),
+                   "fuse": round((t3 - t2) * 1000), "rerank": round((t4 - t3) * 1000), "total": round((t4 - t0) * 1000)}}
+    return final
 
 
 if __name__ == "__main__":

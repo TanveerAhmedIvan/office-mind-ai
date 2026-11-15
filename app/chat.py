@@ -1,7 +1,7 @@
 """M4: follow-up rewrite -> hybrid retrieval -> fenced prompt -> streamed cited answer."""
 from __future__ import annotations
 from typing import Iterator, Protocol
-import os, re
+import os, re, time
 from . import config
 from .hybrid import hybrid_search
 
@@ -52,12 +52,20 @@ def build_messages(history: list[dict], question: str, chunks: list[dict]) -> li
 
 def answer(history: list[dict], question: str, llm: LLM, search=hybrid_search) -> tuple[dict, Iterator[str]]:
     """Returns (meta, token_stream). Caller appends the final turn to history."""
+    t0 = time.perf_counter()
     standalone = rewrite(history, question, llm)
+    t1 = time.perf_counter()
     chunks = search(standalone, 5)
+    t2 = time.perf_counter()
+    msgs = build_messages(history, question, chunks)
     meta = {"standalone": standalone,
             "sources": sorted({c["source"] for c in chunks}),
-            "chunks": [{"id": c["id"], "score": round(c["score"], 3)} for c in chunks]}
-    return meta, llm.chat(build_messages(history, question, chunks), stream=True)
+            "chunks": [{"id": c["id"], "score": round(c["score"], 3)} for c in chunks],
+            "rewrite": {"used": bool(history), "ms": round((t1 - t0) * 1000)},
+            "retrieval_ms": round((t2 - t1) * 1000),
+            "prompt": {"history_msgs": len(trim(history)), "system_chars": len(SYSTEM_PROMPT),
+                       "context_chars": len(format_context(chunks)), "chunks": len(chunks)}}
+    return meta, llm.chat(msgs, stream=True)
 
 
 LEAK = re.compile(r"(system|initial|hidden|secret) (prompt|message)|(your|the) (instructions|rules)|"

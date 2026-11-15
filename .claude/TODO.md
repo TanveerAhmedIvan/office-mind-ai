@@ -18,7 +18,7 @@
 - [x] Injection lines stripped at ingest (sanitize), leak guard (canned refusal, no LLM call), low-relevance guard (0.03), fenced context, prompt rules; 5 tests
 - [x] Relevance guard now OFF by default (broke romanized Bangla); see PROGRESS
 - [ ] OPEN: Q38 'Is Enterprise plan free?' answers 'I don't know' (expected No/custom quote). 3B model confused by FAQ 'free trial'. Try contextual retrieval / bigger model; see M6 score
-## M6 Evaluation (feat/m6-eval)
+## M6 Evaluation (feat/m6-eval)  STATUS: script done+merged; last run 2026-11-14 hit 97%, correct 88%, guardrails 5/6 (target 6/6 missed: Q38). NOT yet re-run on the office PC (killed at 6/40) -> rerun, then tick
 - [x] eval/run_eval.py: hit@5 + fact-matching grader (yes/no core-claim, refusal check, hard rules for Q38/Q40/18-vs-15); JSON reports in eval/reports/
 - [ ] OPEN (post-M6): Q15 partial (no 'wait/retry'), Q17 SEC-EXC 'I don't know', Q30 omits 31 March, Q33 omits guest price 200, Q38 'I don't know'. Ideas: contextual retrieval, qwen2.5:7b on dev PC, answer-completeness prompt, nomic vs bge-m3 comparison
 ## Post-M6 work (branch feat/architecture-and-session-persistence)
@@ -29,10 +29,11 @@
 - [x] UI rewrite: dark mode, mobile, New chat, suggestion chips, source chips, error message, send disabled while streaming
 - [x] T4 Thumbs up/down feedback: POST /feedback -> SQLite `feedback` table (kept after chat expiry); UI buttons; 2 tests
 - [x] T5 Login (email + password, scrypt hash, httpOnly cookie, 12h token). Users admin@nodi.tech (admin), ivan@nodi.tech (user), both password `password` -> CHANGE (UI: Password button; admin can set). Chats owned per user; admin may read any. 
+- [x] Per-chat trace view ("How this was answered" under every answer, saved in SQLite, reloadable): 9 steps with file/function, values, ms, timeline bar, files retrieved vs cited, superseded penalty
 - [x] Admin page /admin: create/disable/delete users, set role, set password, roles + per-role document permissions (all docs or a list), usage table
 - [x] Usage + limits: default 50 messages/user/day (DEFAULT_DAILY_LIMIT), per-user override (0 = unlimited), HTTP 429 when over; usage per user: today/7d/total, approx tokens in/out, last used
 - [ ] SECURITY: default password is `password` and the server is on the LAN. Change both passwords before staff use; consider forcing change at first login
-- [ ] T6 Department metadata filter (needs document -> department map)
+- [x] T6 Document permissions per role, enforced inside vector (Qdrant filter) and BM25 search. Seeded roles admin and user = all documents. Departments = roles (create e.g. `hr`, pick its documents)
 - [ ] T7 calculate_expense_approval(amount) tool (needs thresholds from the PDF)
 - [ ] T9 Re-enable relevance guard with a better threshold (needs labelled Bangla data)
 

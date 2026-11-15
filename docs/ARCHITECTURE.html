@@ -100,6 +100,9 @@ svg{width:100%;height:auto}svg text{fill:var(--fg);font:12px system-ui}svg .box{
 <b>Writes</b><span>Inserts the user and assistant messages into <code>chat_data/sessions.db</code> and deletes rows older than the last 6 turns for that session.</span></div></div></div>
 </div>
 
+<h2>2b. Per-chat trace view in the UI</h2>
+<p class="sub">Under every answer, <b>How this was answered</b> opens the same 9 steps as above filled with the real values of that question: user, role and allowed documents; guard result; rewritten question; top vector hits (cosine); top keyword hits (BM25); fused candidates; the 5 reranked chunks with scores, snippets and the SUPERSEDED penalty; prompt size; first-token and total LLM time. A timeline bar shows where the time went, and the file chips show which retrieved files the answer actually cited. Data: <code>hybrid_search(trace=…)</code> and <code>server.py chat()</code> build it; it is sent as an SSE <code>trace</code> event, stored in the <code>traces</code> table, and reloaded with <code>GET /traces/{id}</code> (owner or admin only).</p>
+
 <h2>3. Which file feeds which answer</h2>
 <table><tr><th>Topic</th><th>Source file in <code>data/</code></th></tr>
 <tr><td>Hours, leave, probation, remote work, notice</td><td>employee_handbook_v3.md (old leave_policy_v2.1 is SUPERSEDED, penalised)</td></tr>

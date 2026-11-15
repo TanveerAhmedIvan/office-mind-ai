@@ -2,49 +2,102 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OfficeMind AI</title>
 <style>
-:root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f1f3f4;--user:#e0e9ff;--line:#d5dbe6;--acc:#2557d6;--err:#c0392b}
-@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--user:#233463;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a}}
+:root{--bg:#fff;--fg:#1d2433;--mut:#5b6577;--card:#f1f3f4;--user:#e0e9ff;--line:#d5dbe6;--acc:#2557d6;--err:#c0392b;--ok:#0f8a5f;--warn:#b45309;
+ --c1:#8b5cf6;--c2:#2557d6;--c3:#0f8a5f;--c4:#b45309;--c5:#c0392b;--c6:#64748b}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e6e9f0;--mut:#9aa3b5;--card:#1b2030;--user:#233463;--line:#2e3650;--acc:#7aa2ff;--err:#ff8a7a;--ok:#4cd3a0;--warn:#f0b25a;
+ --c1:#b69cff;--c2:#7aa2ff;--c3:#4cd3a0;--c4:#f0b25a;--c5:#ff8a7a;--c6:#94a3b8}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:800px;margin:0 auto;padding:0 16px}
-header{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+body{margin:0 auto;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:860px;padding:0 16px}
+header{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 header h1{font-size:18px;margin:0;flex:1}
 header button{background:none;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
-header button[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}
+#who{font-size:12px;color:var(--mut)}header a{color:var(--acc);font-size:13px;display:none}
 #log{flex:1;overflow:auto;padding:8px 0}
-.empty{color:var(--mut);text-align:center;margin-top:20vh}
+.empty{color:var(--mut);text-align:center;margin-top:18vh}
 .empty button{margin:4px;background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px}
 .m{margin:8px 0;padding:10px 12px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word}
-.u{background:var(--user);margin-left:12%}.b{background:var(--card);margin-right:12%}.b.err{border:1px solid var(--err);color:var(--err)}
-.src{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
+.u{background:var(--user);margin-left:12%}.b{background:var(--card);margin-right:6%}.b.err{border:1px solid var(--err);color:var(--err)}
+.src{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;white-space:normal}
 .src span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:0 8px;color:var(--mut)}
-.fb{margin-top:6px}.fb button{background:none;border:1px solid var(--line);border-radius:8px;cursor:pointer;margin-right:4px;font-size:14px}.fb button:disabled{opacity:.5}
-.dbg{display:none;margin-top:8px;font-size:12px;color:var(--mut);font-family:ui-monospace,monospace;white-space:pre-wrap}
-body.debug .dbg{display:block}
+.fb{margin-top:6px;white-space:normal}.fb button{background:none;border:1px solid var(--line);border-radius:8px;cursor:pointer;margin-right:4px;font-size:14px}.fb button:disabled{opacity:.5}
 form{display:flex;gap:8px;padding:10px 0 14px}
 input{flex:1;padding:10px 12px;font-size:16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-form button{padding:10px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px;cursor:pointer}
+form button,.login button{padding:10px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px;cursor:pointer}
 form button:disabled{opacity:.5;cursor:wait}
 .login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
-.login form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;padding:0}
-.login h2{margin:0 0 4px}#lerr{color:var(--err);font-size:14px;min-height:20px}
-#who{font-size:12px;color:var(--mut)}header a{color:var(--acc);font-size:13px;display:none}
+.login form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;padding:0}.login h2{margin:0 0 4px}#lerr{color:var(--err);font-size:14px;min-height:20px}
+/* ---- trace view ---- */
+details.trace{margin-top:8px;white-space:normal;font-size:13px}
+details.trace>summary{cursor:pointer;color:var(--acc);font-weight:600}
+.tl{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:8px 0 4px;background:var(--line)}.tl i{display:block;height:100%}
+.lg{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--mut);font-size:12px;margin-bottom:8px}.lg b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.files{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px}.files span{border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:12px}
+.files .cited{border-color:var(--ok);color:var(--ok)}.files .unused{color:var(--mut)}
+.st{display:grid;grid-template-columns:26px 1fr;gap:8px;margin:0}.st>.n{width:26px;height:26px;border-radius:50%;background:var(--c2);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.st.skip>.n{background:var(--line);color:var(--mut)}
+.st>div{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--bg)}
+.st h4{margin:0;font-size:13.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.st h4 em{margin-left:auto;font-style:normal;color:var(--mut);font-weight:400;font-size:12px}
+.st .f{color:var(--mut);font-size:12px;font-family:ui-monospace,monospace}.st p{margin:3px 0}
+.ar{text-align:center;color:var(--mut);line-height:1;height:12px;font-size:11px}
+table.h{border-collapse:collapse;width:100%;font-size:12px;margin-top:4px}table.h td,table.h th{border-top:1px solid var(--line);padding:2px 6px;text-align:left}
+table.h td:last-child,table.h th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;border-radius:99px;padding:0 7px;border:1px solid var(--warn);color:var(--warn)}
+.sn{color:var(--mut);font-size:12px;white-space:pre-wrap;margin:2px 0 4px 0}
 </style></head><body>
 <div class="login" id="login"><form id="lf"><h2>OfficeMind AI</h2><input id="le" type="email" placeholder="Email" autocomplete="username" required><input id="lp" type="password" placeholder="Password" autocomplete="current-password" required><button>Sign in</button><div id="lerr"></div></form></div>
-<header><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button>
-<button id="dbg" aria-pressed="false" title="Show retrieved chunks and scores">Debug</button>
-<button id="new">New chat</button></header>
+<header><h1>OfficeMind AI · Nodi Tech</h1><span id="who"></span><a id="adm" href="/admin">Admin</a><button id="pw">Password</button><button id="out">Sign out</button><button id="new">New chat</button></header>
 <div id="log" aria-live="polite"></div>
 <form id="f"><input id="q" placeholder="Ask about HR, IT, expenses, NodiDesk…" autocomplete="off" autofocus><button id="send">Send</button></form>
 <script>
 const log=document.getElementById('log'),q=document.getElementById('q'),send=document.getElementById('send');
 const SUGGEST=['What are the office hours?','How many annual leave days do I get?','What is the NodiDesk Growth plan price?','Can I work from home?'];
-let sid=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let sid=null,me=null;
 try{sid=localStorage.getItem('sid')}catch(e){}
 const saveSid=()=>{try{sid?localStorage.setItem('sid',sid):localStorage.removeItem('sid')}catch(e){}};
 function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;log.append(d);log.scrollTop=log.scrollHeight;return d}
 function empty(){log.innerHTML='';const e=document.createElement('div');e.className='empty';e.innerHTML='<p>Ask a question about Nodi Tech documents.</p>';
  SUGGEST.forEach(s=>{const b=document.createElement('button');b.type='button';b.textContent=s;b.onclick=()=>{q.value=s;f.requestSubmit()};e.append(b)});log.append(e)}
-let me=null;
+
+/* ---------- trace view: how this answer was produced ---------- */
+function hits(rows,fmt){return rows&&rows.length?'<table class="h">'+rows.map(r=>`<tr><td>${esc(r.id)}</td><td>${fmt(r)}</td></tr>`).join('')+'</table>':'<p>no results</p>'}
+function renderTrace(t,answer){
+ const R=t.retrieval,ms=t.ms||{},rm=(R&&R.ms)||{},blocked=!!t.guard,skip=blocked||!R;
+ const cited=new Set([...(answer||'').matchAll(/\[([\w.\-]+\.(?:md|pdf))\]/g)].map(m=>m[1]));
+ const used=R?[...new Set(R.final.map(c=>c.source))]:[];
+ const seg=[['Rewrite',ms.rewrite,'--c1'],['Vector',rm.vector,'--c2'],['Keyword',rm.bm25,'--c3'],['Rerank',rm.rerank,'--c4'],['LLM',ms.llm,'--c5']];
+ seg.push(['Other',Math.max(0,(ms.total||0)-seg.reduce((a,x)=>a+(x[1]||0),0)),'--c6']);
+ const tot=Math.max(1,ms.total||1);
+ let h=`<div class="tl">${seg.map(x=>`<i style="width:${100*(x[1]||0)/tot}%;background:var(${x[2]})" title="${x[0]} ${x[1]||0} ms"></i>`).join('')}</div>
+  <div class="lg">${seg.map(x=>`<span><b style="background:var(${x[2]})"></b>${x[0]} ${x[1]||0} ms</span>`).join('')}<span>Total ${(tot/1000).toFixed(1)} s</span></div>`;
+ if(used.length)h+=`<div>Files used:</div><div class="files">${used.map(f=>`<span class="${cited.has(f)?'cited':'unused'}">${esc(f)}${cited.has(f)?' ✓ cited':' (retrieved, not cited)'}</span>`).join('')}</div>`;
+ const step=(n,title,file,body,time,sk)=>`<div class="st${sk?' skip':''}"><span class="n">${n}</span><div><h4>${title}<span class="f">${file}</span><em>${time!=null?time+' ms':''}</em></h4>${body}</div></div>`;
+ const S=[],SK='<p>Skipped.</p>';
+ S.push(step(1,'Request and access','app/server.py · app/auth.py',
+  `<p>${esc(t.user)} · role <b>${esc(t.role)}</b> · documents allowed: <b>${t.allowed===null?'all':esc(t.allowed.join(', ')||'none')}</b></p><p>Usage today: ${t.used_today}${t.limit?' / '+t.limit:' (unlimited)'} · chat memory: ${t.history_msgs} earlier messages</p>`));
+ S.push(step(2,'Input guard','app/chat.py guarded_answer()',blocked?`<p><b style="color:var(--err)">Blocked (${esc(t.guard)})</b>: canned reply, no search, no LLM.</p>`:'<p>Passed: no prompt-leak or injection phrase in the question.</p>'));
+ S.push(step(3,'Rewrite follow-up','app/chat.py rewrite() · LLM call 1',
+  blocked?SK:(t.rewrite&&t.rewrite.used?`<p>“${esc(t.question)}” → <b>“${esc(t.standalone)}”</b></p>`:'<p>Not needed (first message in this chat).</p>'),
+  blocked?null:(t.rewrite&&t.rewrite.used?t.rewrite.ms:null),blocked));
+ S.push(step(4,'Vector search (meaning)','app/vector.py search() · qdrant_data/ · BAAI/bge-m3',skip?SK:`<p>Top ${R.vector.length} of ${R.pool} by cosine similarity, restricted to allowed documents:</p>${hits(R.vector,r=>r.score)}`,skip?null:rm.vector,skip));
+ S.push(step(5,'Keyword search (BM25)','app/hybrid.py bm25_search() · data/*.md, *.pdf (in RAM)',skip?SK:`<p>Exact words and codes such as ND-1042:</p>${hits(R.bm25,r=>r.score)}`,skip?null:rm.bm25,skip));
+ S.push(step(6,'Fuse (RRF)','app/hybrid.py rrf()',skip?SK:`<p>Vector and keyword rankings merged → <b>${R.fused.length}</b> candidates sent to the reranker.</p>`,skip?null:rm.fuse,skip));
+ S.push(step(7,'Rerank, keep top 5','app/hybrid.py hybrid_search() · BAAI/bge-reranker-v2-m3',skip?SK:
+  `<p>Cross-encoder rescoring. Outdated documents get ×${R.penalty}.</p><table class="h"><tr><th>chunk</th><th>score</th></tr>${R.final.map(c=>`<tr><td><details><summary>${esc(c.id)} · ${esc(c.section)}${c.superseded?' <span class="tag">SUPERSEDED ×'+R.penalty+'</span>':''}</summary><div class="sn">${esc(c.snippet)}…</div></details></td><td>${c.score}<br><span style="color:var(--mut)">cos ${c.vscore}</span></td></tr>`).join('')}</table>`,skip?null:rm.rerank,skip));
+ const P=t.prompt||{};
+ S.push(step(8,'Build prompt','app/chat.py build_messages() · SYSTEM_PROMPT',blocked?SK:
+  `<p>System rules (${P.system_chars} chars) + ${P.history_msgs} chat messages + <b>${P.chunks}</b> fenced chunks (${P.context_chars} chars) marked as untrusted data.</p>`,null,blocked));
+ S.push(step(9,'Generate answer','app/llm.py OllamaLLM.chat() · '+esc(t.model)+' · LLM call 2',blocked?SK:
+  `<p>First token after ${ms.first_token} ms, finished in ${ms.llm} ms · ${t.answer_chars} characters${used.length?` · cited ${[...cited].filter(f=>used.includes(f)).length} of ${used.length} retrieved files`:''}.</p>`,blocked?null:ms.llm,blocked));
+ return h+S.join('<div class="ar">▼</div>');
+}
+function traceBox(t,answer){const d=document.createElement('details');d.className='trace';d.innerHTML='<summary>How this was answered</summary><div class="tb"></div>';
+ d.querySelector('.tb').innerHTML=renderTrace(t,answer);return d}
+function lazyTraceBox(id,answer){const d=document.createElement('details');d.className='trace';d.innerHTML='<summary>How this was answered</summary><div class="tb">Loading…</div>';
+ let done=false;d.ontoggle=async()=>{if(!d.open||done)return;done=true;const b=d.querySelector('.tb');
+  try{const r=await fetch('/traces/'+id);b.innerHTML=r.ok?renderTrace(await r.json(),answer):'Trace not available.'}catch(e){b.textContent='Trace not available.'}};return d}
+
+/* ---------- session, login ---------- */
 function showMe(){document.getElementById('who').textContent=me?me.email+' · '+(me.limit?me.used_today+'/'+me.limit+' today':me.used_today+' today'):'';
  document.getElementById('adm').style.display=me&&me.role==='admin'?'inline':'none'}
 async function boot(){
@@ -62,13 +115,13 @@ document.getElementById('pw').onclick=async()=>{const o=prompt('Current password
 async function restore(){
  if(!sid)return empty();
  try{const r=await fetch('/sessions/'+sid);if(!r.ok)throw 0;const h=(await r.json()).messages;
-  if(!h.length)return empty();log.innerHTML='';h.forEach(m=>add(m.role==='user'?'u':'b',m.content))}catch(e){sid=null;saveSid();empty()}}
+  if(!h.length)return empty();log.innerHTML='';
+  h.forEach(m=>{const d=add(m.role==='user'?'u':'b',m.content);if(m.trace_id)d.append(lazyTraceBox(m.trace_id,m.content))})}catch(e){sid=null;saveSid();empty()}}
 document.getElementById('new').onclick=()=>{sid=null;saveSid();empty();q.focus()};
-const dbgBtn=document.getElementById('dbg');
-dbgBtn.onclick=()=>{const on=document.body.classList.toggle('debug');dbgBtn.setAttribute('aria-pressed',on)};
+
 f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disabled)return;
  document.querySelector('.empty')?.remove();q.value='';send.disabled=true;add('u',m);
- const b=add('b','…');let txt='',meta=null;
+ const b=add('b','…');let txt='',meta=null,trace=null;
  try{
   const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,session_id:sid})});
   if(r.status===401){boot();throw new Error('Please sign in again')}
@@ -78,6 +131,7 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
    let i;while((i=buf.indexOf('\n\n'))>=0){const blk=buf.slice(0,i);buf=buf.slice(i+2);
     const ev=blk.match(/event: (\w+)/)[1],data=JSON.parse(blk.match(/data: (.*)/)[1]);
     if(ev==='meta'){meta=data;sid=data.session_id;saveSid()}
+    if(ev==='trace')trace=data;
     if(ev==='token'){txt+=data;b.textContent=txt;log.scrollTop=log.scrollHeight}}}
   if(!txt)b.textContent='(no answer)';
   if(meta&&meta.sources.length){const s=document.createElement('div');s.className='src';meta.sources.forEach(x=>{const t=document.createElement('span');t.textContent=x;s.append(t)});b.append(s)}
@@ -85,8 +139,7 @@ f.onsubmit=async e=>{e.preventDefault();const m=q.value.trim();if(!m||send.disab
    [['👍',1],['👎',-1]].forEach(([e,r])=>{const x=document.createElement('button');x.textContent=e;x.setAttribute('aria-label',r>0?'Helpful':'Not helpful');
     x.onclick=async()=>{fb.querySelectorAll('button').forEach(y=>y.disabled=true);
      try{await fetch('/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sid,rating:r,question:m,answer:txt})})}catch(e){}};fb.append(x)});b.append(fb)}
-  if(meta){const d=document.createElement('div');d.className='dbg';
-   d.textContent='standalone: '+meta.standalone+'\n'+meta.chunks.map(c=>c.score.toFixed(3)+'  '+c.id).join('\n');b.append(d)}
+  if(trace)b.append(traceBox(trace,txt));
  }catch(err){b.classList.add('err');b.textContent='Could not get an answer ('+err.message+').'}
  try{me=await (await fetch('/me')).json();showMe()}catch(x){}
  send.disabled=false;q.focus()};

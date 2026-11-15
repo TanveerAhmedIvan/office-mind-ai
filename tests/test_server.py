@@ -13,7 +13,7 @@ def client(monkeypatch, llm=None):
     monkeypatch.setattr(server, "store", st)
     monkeypatch.setattr(server, "auth", AuthStore(st.db))
     monkeypatch.setattr(server, "llm", llm or FakeLLM("ok [x.md]"))
-    monkeypatch.setattr(server, "hybrid_search", lambda q, k, allowed=None: CH)
+    monkeypatch.setattr(server, "hybrid_search", lambda q, k, allowed=None, trace=None: CH)
     return TestClient(server.app), st
 
 
@@ -30,7 +30,11 @@ def test_chat_requires_login_then_streams_and_remembers(monkeypatch):
     assert "event: meta" in r.text and "event: token" in r.text and "event: done" in r.text
     sid = r.text.split('"session_id": "')[1].split('"')[0]
     assert len(st.history(sid)) == 2
-    assert cl.get("/sessions/" + sid).json()["messages"][0]["content"] == "hi"
+    msgs = cl.get("/sessions/" + sid).json()["messages"]
+    assert msgs[0]["content"] == "hi" and msgs[1]["trace_id"]
+    tr = cl.get("/traces/%d" % msgs[1]["trace_id"]).json()
+    assert tr["question"] == "hi" and tr["role"] == "user" and tr["ms"]["total"] >= 0 and tr["model"]
+    assert "event: trace" in r.text
 
 
 def test_other_user_cannot_read_or_use_chat(monkeypatch):
@@ -49,7 +53,7 @@ def test_other_user_cannot_read_or_use_chat(monkeypatch):
 def test_permissions_passed_to_search(monkeypatch):
     cl, st = client(monkeypatch)
     seen = {}
-    monkeypatch.setattr(server, "hybrid_search", lambda q, k, allowed=None: seen.setdefault("a", allowed) and CH or CH)
+    monkeypatch.setattr(server, "hybrid_search", lambda q, k, allowed=None, trace=None: seen.setdefault("a", allowed) and CH or CH)
     server.auth.set_role("hr", False, ["employee_handbook_v3.md"])
     server.auth.create_user("h@nodi.tech", "H", "password1", "hr")
     login(cl, "h@nodi.tech", "password1")
